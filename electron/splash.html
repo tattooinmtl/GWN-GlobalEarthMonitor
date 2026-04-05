@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GWN - Global Earthquake Viewer v4.0</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050709;
+      --panel: #0b0e14;
+      --surface: #10141c;
+      --border: #1e2a3a;
+      --border-hi: #2a3c52;
+      --text: #e6edf3;
+      --muted: #7d8a98;
+      --accent: #38bdf8;
+      --accent2: #818cf8;
+      --accent3: #a78bfa;
+      --ok: #34d399;
+      --glow: rgba(56, 189, 248, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 30% 20%, rgba(56, 189, 248, 0.08), transparent),
+        radial-gradient(ellipse 50% 40% at 70% 75%, rgba(129, 140, 248, 0.06), transparent),
+        radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.03), transparent 70%);
+      pointer-events: none;
+    }
+
+    .shell {
+      width: min(720px, calc(100vw - 28px));
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: linear-gradient(165deg, rgba(11, 14, 20, 0.98), rgba(8, 10, 16, 0.99));
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.02) inset,
+        0 32px 80px rgba(0, 0, 0, 0.6),
+        0 0 120px rgba(56, 189, 248, 0.04);
+      overflow: hidden;
+    }
+
+    .head {
+      padding: 28px 30px 22px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(16, 20, 28, 0.6), transparent);
+      position: relative;
+    }
+
+    .head-top {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .globe {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 35% 35%, var(--accent), rgba(56, 189, 248, 0.3) 60%, transparent 70%),
+        radial-gradient(circle at 50% 50%, var(--accent2), transparent 80%);
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.25), 0 0 6px rgba(56, 189, 248, 0.4) inset;
+      animation: pulse 3s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 24px rgba(56, 189, 248, 0.25), 0 0 6px rgba(56, 189, 248, 0.4) inset; }
+      50% { box-shadow: 0 0 36px rgba(56, 189, 248, 0.35), 0 0 10px rgba(56, 189, 248, 0.5) inset; }
+    }
+
+    .brand {
+      flex: 1;
+    }
+
+    .eyebrow {
+      font-size: 10.5px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.2;
+      background: linear-gradient(135deg, #e6edf3, #a5b4c4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .version-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(129, 140, 248, 0.10));
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+
+    .version-badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--ok);
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .progress-wrap {
+      padding: 18px 30px 0;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .bar {
+      position: relative;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(16, 20, 28, 0.95);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 2%;
+      min-width: 2%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 50%, var(--ok) 100%);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+      transition: width 200ms ease;
+    }
+
+    .log-shell {
+      margin: 16px 30px 24px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(5, 7, 10, 0.95);
+      overflow: hidden;
+    }
+
+    .log-title {
+      padding: 9px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .log-title::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--ok);
+      box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+    }
+
+    pre {
+      margin: 0;
+      padding: 14px;
+      min-height: 200px;
+      max-height: 200px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+      font-size: 11.5px;
+      line-height: 1.6;
+      color: #b0bfcf;
+    }
+
+    pre::-webkit-scrollbar { width: 6px; }
+    pre::-webkit-scrollbar-track { background: transparent; }
+    pre::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
+
+    .line::before {
+      content: '▸ ';
+      color: var(--accent);
+      font-size: 10px;
+    }
+
+    .footer {
+      padding: 0 30px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10.5px;
+      color: var(--muted);
+      opacity: 0.7;
+    }
+
+    .footer .secure {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--ok);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="head">
+      <div class="head-top">
+        <div class="globe"></div>
+        <div class="brand">
+          <div class="eyebrow">Global Warning Networks</div>
+          <h1>GWN — Earthquake Viewer</h1>
+        </div>
+        <div class="version-badge"><span class="dot"></span> v4.0</div>
+      </div>
+      <div class="sub" id="status-text">Preparing application shell…</div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-meta">
+        <span>Initializing</span>
+        <span id="progress-label">2 %</span>
+      </div>
+      <div class="bar"><div id="bar-fill" class="bar-fill"></div></div>
+    </div>
+
+    <div class="log-shell">
+      <div class="log-title">System Log</div>
+      <pre id="log-output"></pre>
+    </div>
+
+    <div class="footer">
+      <span>© 2026 Erik Boivin</span>
+      <span class="secure">✓ Hardened Build</span>
+    </div>
+  </div>
+
+  <script>
+    const barFill = document.getElementById('bar-fill')
+    const progressLabel = document.getElementById('progress-label')
+    const statusText = document.getElementById('status-text')
+    const logOutput = document.getElementById('log-output')
+
+    function renderState(state) {
+      if (!state) return
+      const progress = Number.isFinite(state.progress) ? Math.max(0, Math.min(100, state.progress)) : 0
+      barFill.style.width = `${progress}%`
+      progressLabel.textContent = `${progress} %`
+      statusText.textContent = state.status || 'Loading…'
+      logOutput.innerHTML = (Array.isArray(state.lines) ? state.lines : [])
+        .map(line => `<span class="line">${escapeHtml(String(line))}</span>`)
+        .join('\n')
+      logOutput.scrollTop = logOutput.scrollHeight
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+    }
+
+    window.splashAPI.getStartupState().then(renderState)
+    window.splashAPI.onStartupState(renderState)
+  </script>
+</body>
+</html>

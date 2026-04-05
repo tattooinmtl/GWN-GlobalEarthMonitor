@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' data: blob: https:; connect-src 'self' https://earthquake.usgs.gov https://service.earthscope.org https://*.basemaps.cartocdn.com https://service.ncedc.org https://service.scedc.caltech.edu https://geofon.gfz-potsdam.de https://eida.ethz.ch https://ws.ipgp.fr https://www.orfeus-eu.org https://eida.bgr.de https://www.earthquakescanada.nrcan.gc.ca https://www.fnet.bosai.go.jp https://webservices.ingv.it https://ws.resif.fr https://service.geonet.org.nz https://www.seismicportal.eu https://www.jma.go.jp https://www.isc.ac.uk https://geocoding-api.open-meteo.com https://ssd-api.jpl.nasa.gov https://services.swpc.noaa.gov https://api.nasa.gov https://www.minorplanetcenter.net https://data.gsras.ru https://gibs.earthdata.nasa.gov https://tile.openweathermap.org https://api.openweathermap.org https://www.airnowapi.org https://ipapi.co https://volcanoes.usgs.gov https://volcano.si.edu https://raw.githubusercontent.com https://fonts.gstatic.com https://ps1images.stsci.edu https://catalogs.mast.stsci.edu https://mast.stsci.edu; font-src 'self' data: https:; worker-src 'self' blob:; child-src 'self' blob: https:; object-src 'none'; base-uri 'self'; frame-src 'self' blob:; frame-ancestors 'none';" />
+  <title>Global Earthquake Viewer v4.0</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <div id="sidebar-header">
+        <h1>🌍 GWN - Global Earthquake Viewer V4.0</h1>
+        <div id="live-event-banner">
+          <span id="live-event-dot"></span>
+          <span id="live-event-text">Waiting for data…</span>
+        </div>
+        <div id="controls">
+          <select id="feed-select">
+            <option value="all_hour.geojson">Past Hour</option>
+            <option value="all_day.geojson" selected>Past Day</option>
+            <option value="all_week.geojson">Past Week</option>
+            <option value="all_month.geojson">Past Month</option>
+          </select>
+          <select id="region-select">
+            <option value="global" selected>Global</option>
+            <option value="canada">Canada Only</option>
+            <option value="europe">Europe Only</option>
+            <option value="italy">Italy Only</option>
+            <option value="japan">Japan Only</option>
+          </select>
+          <select id="global-source-select">
+            <option value="usgs" selected>Global Source: USGS</option>
+            <option value="emsc">Global Source: EMSC</option>
+            <option value="isc">Global Source: ISC (delayed)</option>
+            <option value="geofon">Global Source: GEOFON</option>
+            <!-- Russian sources inserted dynamically by JS if online -->
+          </select>
+          <button id="refresh-btn">⟳ Refresh</button>
+        </div>
+        <div id="stats">
+          <span id="quake-count">Loading...</span>
+          <span id="last-updated"></span>
+        </div>
+        <div id="quake-mag-filter-panel">
+          <div class="quake-mag-filter-title">Map Magnitude Filter</div>
+          <div class="quake-mag-filter-row">
+            <label for="quake-mag-filter">Minimum magnitude to fetch</label>
+            <select id="quake-mag-filter">
+              <option value="0">0</option>
+              <option value="1" selected>1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+            </select>
+          </div>
+          <div class="quake-mag-filter-note">Use 0 to include 0.x quakes. Higher values keep the map lighter by fetching fewer events.</div>
+        </div>
+      </div>
+
+      <div id="tabs">
+        <div id="primary-tabs" class="tab-row">
+          <button type="button" class="tab-btn active" data-tab="earthquakes">Quakes</button>
+          <button type="button" class="tab-btn" data-tab="fireballs">Fireballs</button>
+          <button type="button" class="tab-btn" data-tab="asteroids">Asteroids</button>
+          <button type="button" class="tab-btn" data-tab="3dsim">3D Sim</button>
+          <button type="button" class="tab-btn" data-tab="skyexplorer">Sky Explorer</button>
+          <button type="button" class="tab-btn" data-tab="volcanoes">Volcanoes</button>
+          <button type="button" class="tab-btn" data-tab="atmosphere">Atmosphere</button>
+          <button type="button" class="tab-btn" data-tab="prediction">Prediction</button>
+          <button type="button" class="tab-btn" data-tab="stations">Stations</button>
+          <button type="button" class="tab-btn" data-tab="notes">Notes</button>
+          <button type="button" class="tab-btn" data-tab="stats">Stats</button>
+        </div>
+      </div>
+
+      <!-- Earthquake List -->
+      <div id="tab-earthquakes" class="tab-panel active">
+        <div id="earthquake-list"></div>
+      </div>
+
+      <div id="tab-asteroids" class="tab-panel">
+        <div class="side-controls-panel">
+          <div class="side-controls-title">Asteroid Controls</div>
+          <div class="side-controls-stack">
+            <button class="asteroid-btn" id="asteroid-load-btn" type="button">Load all asteroid feeds</button>
+            <button class="asteroid-btn" id="asteroid-reload-btn" type="button">Reload</button>
+            <span id="asteroid-status" class="asteroid-status">No asteroid data loaded yet.</span>
+            <input id="asteroid-search" type="text" placeholder="Search asteroid name..." />
+            <label class="side-controls-note" for="asteroid-hazard-only">
+              <input id="asteroid-hazard-only" type="checkbox" />
+              Hazardous only
+            </label>
+            <select id="asteroid-source-filter">
+              <option value="all">All sources</option>
+              <option value="NASA CAD">NASA CAD</option>
+              <option value="NASA Sentry">NASA Sentry</option>
+              <option value="NASA NeoWs">NASA NeoWs</option>
+              <option value="MPC NEOCP">MPC NEOCP</option>
+              <option value="JPL Comets">JPL Comets</option>
+              <option value="JPL CAD Comets">JPL CAD Comets</option>
+            </select>
+            <select id="asteroid-prefix-filter">
+              <option value="all">All types</option>
+              <option value="asteroid">Asteroids only</option>
+              <option value="C">Comets (C/)</option>
+              <option value="P">Comets (P/)</option>
+              <option value="D">Comets (D/)</option>
+            </select>
+            <select id="asteroid-sort">
+              <option value="risk">Sort: Risk first</option>
+              <option value="distance">Sort: Closest first</option>
+              <option value="name">Sort: Name</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-fireballs" class="tab-panel">
+        <div class="side-controls-panel">
+          <div class="side-controls-title">Fireball Map</div>
+          <div class="side-controls-stack">
+            <button class="asteroid-btn" id="fireball-refresh-btn" type="button">Refresh fireballs</button>
+            <span id="fireball-status" class="fireball-status">Loading NASA fireball events...</span>
+            <div id="fireball-summary" class="fireball-summary">
+              <div class="fireball-summary-card">
+                <div class="fireball-summary-label">Visible events</div>
+                <div class="fireball-summary-value" id="fireball-count">-</div>
+              </div>
+              <div class="fireball-summary-card">
+                <div class="fireball-summary-label">Latest event</div>
+                <div class="fireball-summary-value fireball-summary-value-small" id="fireball-latest">-</div>
+              </div>
+            </div>
+
+            <div class="fireball-trend-section">
+              <div class="fireball-trend-title">Entry Rate Trend</div>
+              <div class="fireball-filter-bar">
+                <select id="fireball-filter-range" class="fireball-filter-select">
+                  <option value="all">All time</option>
+                  <option value="10y">Last 10 years</option>
+                  <option value="5y">Last 5 years</option>
+                  <option value="1y">Last year</option>
+                  <option value="6mo">Last 6 months</option>
+                </select>
+                <select id="fireball-filter-year" class="fireball-filter-select">
+                  <option value="all">All years</option>
+                </select>
+                <select id="fireball-filter-month" class="fireball-filter-select">
+                  <option value="all">All months</option>
+                  <option value="1">Jan</option>
+                  <option value="2">Feb</option>
+                  <option value="3">Mar</option>
+                  <option value="4">Apr</option>
+                  <option value="5">May</option>
+                  <option value="6">Jun</option>
+                  <option value="7">Jul</option>
+                  <option value="8">Aug</option>
+                  <option value="9">Sep</option>
+                  <option value="10">Oct</option>
+                  <option value="11">Nov</option>
+                  <option value="12">Dec</option>
+                </select>
+                <select id="fireball-filter-energy" class="fireball-filter-select">
+                  <option value="any">Any energy</option>
+                  <option value="0.1">&gt;0.1 kt</option>
+                  <option value="1">&gt;1 kt</option>
+                  <option value="10">&gt;10 kt</option>
+                </select>
+              </div>
+              <div class="fireball-trend-chart-wrap">
+                <canvas id="fireball-trend-chart"></canvas>
+              </div>
+              <div class="fireball-trend-stats">
+                <div class="fireball-summary-card">
+                  <div class="fireball-summary-label">Hist. average</div>
+                  <div class="fireball-summary-value fireball-summary-value-small" id="fireball-trend-avg">-</div>
+                </div>
+                <div class="fireball-summary-card">
+                  <div class="fireball-summary-label">Last 12 mo</div>
+                  <div class="fireball-summary-value fireball-summary-value-small" id="fireball-trend-last12">-</div>
+                </div>
+                <div class="fireball-summary-card">
+                  <div class="fireball-summary-label">In selection</div>
+                  <div class="fireball-summary-value fireball-summary-value-small" id="fireball-trend-total">-</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="fireball-legend">
+              <div class="fireball-legend-title">Marker guide</div>
+              <div class="fireball-legend-row"><span class="fireball-legend-dot fireball-legend-dot-small"></span><span>Small marker: lower impact energy</span></div>
+              <div class="fireball-legend-row"><span class="fireball-legend-dot fireball-legend-dot-large"></span><span>Large marker: higher impact energy</span></div>
+            </div>
+            <div class="side-controls-note">Shows NASA fireball events on the map. Orange bars = above historical average. Click any marker to inspect details.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-prediction" class="tab-panel">
+        <div class="side-controls-panel">
+          <div class="side-controls-title">Prediction Controls</div>
+          <div class="side-controls-stack">
+            <button id="prediction-refresh-btn" class="prediction-btn" type="button">Refresh data</button>
+            <button id="prediction-auto-btn" class="prediction-btn" type="button">Auto-refresh: OFF</button>
+            <div class="side-controls-note">Fireballs stay part of the Prediction Center score and also remain overlaid on the quake map.</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-volcanoes" class="tab-panel">
+        <div class="side-controls-panel">
+          <div class="side-controls-title">Volcano Monitor</div>
+          <div class="side-controls-stack">
+            <button class="asteroid-btn" id="volcano-refresh-btn" type="button">Refresh volcanoes</button>
+            <select id="volcano-filter">
+              <option value="all">Active + Monitored</option>
+              <option value="active">Active Only</option>
+            </select>
+            <span id="volcano-status" class="side-controls-note">Loading volcano data...</span>
+            <div id="volcano-counts" class="volcano-counts"></div>
+          </div>
+        </div>
+        <div id="volcano-list"></div>
+      </div>
+
+      <div id="tab-3dsim" class="tab-panel">
+        <div class="side-controls-panel">
+          <div class="side-controls-title">3D Asteroid Simulation</div>
+          <div class="side-controls-stack">
+            <div class="side-controls-note">Interactive 3D visualization of near-Earth asteroid orbits. Controls are inside the simulation panel.</div>
+            <div class="side-controls-note" style="color:var(--accent)">Data: Asterank · MPC · JPL Horizons</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-skyexplorer" class="tab-panel">
+        <div class="side-controls-panel">
+          <div class="side-controls-title">🔭 Sky Explorer</div>
+          <div class="side-controls-stack">
+            <div class="side-controls-note">Browse the Pan-STARRS DR2 sky survey — 3 billion objects with color imagery across 3/4 of the sky.</div>
+            <div class="side-controls-note" style="color:var(--accent)">Data: Pan-STARRS · MAST · STScI</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-atmosphere" class="tab-panel">
+        <div class="side-controls-panel">
+          <div class="side-controls-title">Atmosphere Layers</div>
+          <div class="side-controls-stack">
+            <div class="atmo-layer-group">
+              <div class="atmo-group-label">Weather</div>
+              <label class="atmo-layer-toggle"><input type="checkbox" data-layer="precip"> Precipitation</label>
+              <label class="atmo-layer-toggle"><input type="checkbox" data-layer="clouds"> Cloud Coverage</label>
+              <label class="atmo-layer-toggle"><input type="checkbox" data-layer="wind"> Wind Speed</label>
+              <label class="atmo-layer-toggle"><input type="checkbox" data-layer="temp"> Temperature</label>
+            </div>
+            <div class="atmo-layer-group">
+              <div class="atmo-group-label">Atmospheric Science</div>
+              <label class="atmo-layer-toggle"><input type="checkbox" data-layer="so2"> SO&#8322; Index</label>
+              <label class="atmo-layer-toggle"><input type="checkbox" data-layer="aerosol"> UV Aerosol Index</label>
+              <label class="atmo-layer-toggle"><input type="checkbox" data-layer="fires"> Thermal Anomalies</label>
+
+            </div>
+            <div class="atmo-layer-group">
+              <div class="atmo-group-label">Space Weather</div>
+              <div id="atmo-kp-badge" class="atmo-space-badge">Kp: —</div>
+              <div id="atmo-xray-badge" class="atmo-space-badge">X-ray: —</div>
+              <div id="atmo-solar-wind-badge" class="atmo-space-badge">Solar Wind: — km/s</div>
+            </div>
+            <div class="atmo-layer-group">
+              <div class="atmo-group-label">Time Playback (NASA layers)</div>
+              <div class="atmo-time-ctrl">
+                <button id="atmo-play-btn" class="atmo-ctrl-btn" type="button">▶ Play</button>
+                <span id="atmo-time-label" class="atmo-time-label">Today</span>
+              </div>
+              <input type="range" id="atmo-time-slider" min="0" max="6" value="6" step="1" class="atmo-slider" />
+              <div class="side-controls-note">Slide to replay last 7 days of NASA atmospheric data.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Station List -->
+      <div id="tab-stations" class="tab-panel">
+        <div id="station-controls">
+          <select id="data-center">
+            <option value="earthscope" selected>EarthScope (Global)</option>
+            <option value="canada">Earthquakes Canada (NRCan)</option>
+            <option value="ncedc">NCEDC (N. California)</option>
+            <option value="scedc">SCEDC (S. California)</option>
+            <option value="geofon">GEOFON (GFZ)</option>
+            <option value="ethz">ETH Zurich (EIDA)</option>
+            <option value="ipgp">IPGP (France)</option>
+            <option value="orfeus">ORFEUS (EIDA)</option>
+            <option value="bgr">BGR (Germany)</option>
+            <option value="japan">Japan F-net (NIED)</option>
+            <option value="ingv">INGV (Italy)</option>
+            <option value="resif">RESIF (France)</option>
+            <option value="geonet">GeoNet (New Zealand)</option>
+          </select>
+          <select id="station-network">
+            <option value="IU">IU - Global Seismograph</option>
+            <option value="II">II - IRIS/IDA</option>
+            <option value="IC">IC - China</option>
+            <option value="GE">GE - GEOFON</option>
+            <option value="G">G - GEOSCOPE</option>
+          </select>
+          <button id="load-stations-btn">Load Stations</button>
+          <button id="reopen-waveform-btn">Reopen Waveform</button>
+        </div>
+        <div id="station-list"></div>
+      </div>
+
+      <!-- Notes -->
+      <div id="tab-notes" class="tab-panel">
+        <div class="side-controls-panel">
+          <div class="side-controls-title">Notes</div>
+          <div class="side-controls-stack">
+            <button class="notes-btn" id="notes-quick-save-btn" type="button">Quick Save</button>
+            <div class="notes-save-as-row">
+              <input id="notes-save-as-name" type="text" placeholder="File name..." />
+              <button class="notes-btn" id="notes-save-as-btn" type="button">Save As</button>
+            </div>
+            <button class="notes-btn" id="notes-open-btn" type="button">Open File</button>
+            <select id="notes-file-list" class="notes-file-select hidden">
+              <option value="">Select a file...</option>
+            </select>
+            <button class="notes-btn notes-btn-danger" id="notes-erase-btn" type="button">Erase</button>
+            <span id="notes-status" class="notes-status"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div id="tab-stats" class="tab-panel">
+        <div class="side-controls-panel">
+          <div class="side-controls-title">Statistics Workspace</div>
+          <div class="side-controls-note">The map closes while Stats is open. Use the full-page workspace on the right to filter the loaded earthquake feed by source, magnitude, depth, and bucket size, then compare counts, average depths, and event cadence.</div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Map -->
+    <main id="map-container">
+      <div id="map"></div>
+
+      <section id="asteroids-view" class="main-view asteroid-panel hidden">
+        <div class="asteroid-shell">
+          <div class="asteroid-head">
+            <div>
+              <h2>Asteroid Center</h2>
+              <p>Live asteroid &amp; comet intelligence from NASA CAD, NASA Sentry, NASA NeoWs, MPC NEOCP, JPL Comets, and JPL CAD Comets.</p>
+            </div>
+          </div>
+
+          <section class="asteroid-card asteroid-filter-card">
+            <div id="asteroid-source-health" class="asteroid-source-health"></div>
+          </section>
+
+          <section class="asteroid-layout">
+            <div class="asteroid-card asteroid-list-wrap">
+              <ul id="asteroid-list" class="asteroid-list"></ul>
+            </div>
+            <div class="asteroid-card asteroid-detail-wrap">
+              <div id="asteroid-title" class="asteroid-title">Select an asteroid</div>
+              <div id="asteroid-source" class="asteroid-source"></div>
+              <div id="asteroid-extra" class="asteroid-extra"></div>
+              <div id="asteroid-grid" class="asteroid-grid"></div>
+              <div id="asteroid-ps1" class="asteroid-ps1-wrap hidden">
+                <div class="asteroid-ps1-header">
+                  <span class="asteroid-ps1-badge">🔭 Pan-STARRS DR2</span>
+                  <span id="asteroid-ps1-status" class="asteroid-ps1-status"></span>
+                </div>
+                <div class="asteroid-ps1-body">
+                  <div class="asteroid-ps1-img-wrap">
+                    <img id="asteroid-ps1-img" class="asteroid-ps1-img" alt="Pan-STARRS sky cutout" />
+                    <div id="asteroid-ps1-img-placeholder" class="asteroid-ps1-img-placeholder">No image available</div>
+                  </div>
+                  <div class="asteroid-ps1-mags" id="asteroid-ps1-mags"></div>
+                </div>
+              </div>
+              <button id="asteroid-view3d-btn" class="asteroid-view3d-btn" type="button" disabled>🌐 View in 3D</button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="prediction-view" class="main-view prediction-panel hidden">
+        <div class="prediction-shell">
+          <div class="prediction-head">
+            <div>
+              <h2>Prediction Center</h2>
+              <p>Realtime danger index from NOAA, NASA CNEOS, orbital calculations, and live fireball activity.</p>
+            </div>
+          </div>
+
+          <section class="prediction-card prediction-score-card">
+            <div class="prediction-score-top">
+              <div>
+                <div class="prediction-section-label">Earth Danger Index</div>
+                <div class="prediction-score-line">
+                  <span class="prediction-score-value" id="prediction-total-score">-</span>
+                  <span class="prediction-score-denom">/ 100</span>
+                </div>
+              </div>
+              <div class="prediction-score-side">
+                <span class="prediction-level-pill" id="prediction-level-pill">Loading</span>
+                <span class="prediction-updated" id="prediction-updated-time">Waiting for data...</span>
+              </div>
+            </div>
+            <div class="prediction-bar-track">
+              <div class="prediction-bar-fill" id="prediction-main-bar"></div>
+            </div>
+          </section>
+
+          <div class="prediction-section-label prediction-section-spacer">Component scores</div>
+          <section class="prediction-card prediction-components-card">
+            <div class="prediction-comp-row"><span class="prediction-comp-label">Space weather (Kp)</span><div class="prediction-comp-track"><div class="prediction-comp-fill prediction-fill-kp" id="prediction-bar-kp"></div></div><span class="prediction-comp-val" id="prediction-val-kp">-</span><span class="prediction-comp-weight">25%</span></div>
+            <div class="prediction-comp-row"><span class="prediction-comp-label">Solar X-ray flux</span><div class="prediction-comp-track"><div class="prediction-comp-fill prediction-fill-kp" id="prediction-bar-xray"></div></div><span class="prediction-comp-val" id="prediction-val-xray">-</span><span class="prediction-comp-weight">20%</span></div>
+            <div class="prediction-comp-row"><span class="prediction-comp-label">NEO close approach</span><div class="prediction-comp-track"><div class="prediction-comp-fill prediction-fill-neo" id="prediction-bar-neo"></div></div><span class="prediction-comp-val" id="prediction-val-neo">-</span><span class="prediction-comp-weight">20%</span></div>
+            <div class="prediction-comp-row"><span class="prediction-comp-label">Fireball energy (30d)</span><div class="prediction-comp-track"><div class="prediction-comp-fill prediction-fill-neo" id="prediction-bar-fire"></div></div><span class="prediction-comp-val" id="prediction-val-fire">-</span><span class="prediction-comp-weight">10%</span></div>
+            <div class="prediction-comp-row"><span class="prediction-comp-label">Lunar tidal force</span><div class="prediction-comp-track"><div class="prediction-comp-fill prediction-fill-orbit" id="prediction-bar-moon"></div></div><span class="prediction-comp-val" id="prediction-val-moon">-</span><span class="prediction-comp-weight">10%</span></div>
+            <div class="prediction-comp-row"><span class="prediction-comp-label">Planetary alignment</span><div class="prediction-comp-track"><div class="prediction-comp-fill prediction-fill-orbit" id="prediction-bar-planet"></div></div><span class="prediction-comp-val" id="prediction-val-planet">-</span><span class="prediction-comp-weight">10%</span></div>
+            <div class="prediction-comp-row"><span class="prediction-comp-label">Impact risk (Sentry)</span><div class="prediction-comp-track"><div class="prediction-comp-fill prediction-fill-risk" id="prediction-bar-sentry"></div></div><span class="prediction-comp-val" id="prediction-val-sentry">-</span><span class="prediction-comp-weight">5%</span></div>
+          </section>
+
+          <section class="prediction-metric-grid">
+            <div class="prediction-metric-card"><div class="prediction-metric-label">Kp index</div><div class="prediction-metric-value" id="prediction-m-kp">-</div><div class="prediction-metric-sub">Geomagnetic</div></div>
+            <div class="prediction-metric-card"><div class="prediction-metric-label">X-ray class</div><div class="prediction-metric-value" id="prediction-m-xray">-</div><div class="prediction-metric-sub">GOES satellite</div></div>
+            <div class="prediction-metric-card"><div class="prediction-metric-label">Nearest NEO</div><div class="prediction-metric-value" id="prediction-m-neo">-</div><div class="prediction-metric-sub">AU from Earth</div></div>
+            <div class="prediction-metric-card"><div class="prediction-metric-label">Moon phase</div><div class="prediction-metric-value" id="prediction-m-moon">-</div><div class="prediction-metric-sub">Tidal influence</div></div>
+          </section>
+
+          <div class="prediction-section-label prediction-section-spacer">Live data sources</div>
+          <section class="prediction-card prediction-source-card" id="prediction-sources-panel">
+            <div class="prediction-placeholder">Waiting for first refresh.</div>
+          </section>
+
+          <section class="prediction-card prediction-formula-card">
+            <div class="prediction-formula-title">Formula</div>
+            <code>DangerIndex = Sigma(score x weight) / Sigma(weights) x 100</code>
+          </section>
+
+          <div class="prediction-section-label prediction-section-spacer">History (session)</div>
+          <section class="prediction-card prediction-history-card" id="prediction-history-panel">
+            <div class="prediction-placeholder">No readings yet.</div>
+          </section>
+        </div>
+      </section>
+
+      <section id="stats-view" class="main-view stats-panel hidden">
+        <div class="stats-shell">
+          <div class="stats-head">
+            <div>
+              <h2>Earthquake Statistics Lab</h2>
+              <p>Analyze the earthquake feed already loaded in the app. Compare magnitude buckets, average depths, source activity, cadence, time-of-day patterns, depth distributions, weekday rhythm, day-over-day trends, and depth-versus-magnitude relationships without changing the main map.</p>
+            </div>
+          </div>
+
+          <section class="stats-card stats-filter-card">
+            <div class="stats-filter-grid">
+              <label>
+                Loaded source
+                <select id="stats-source-filter">
+                  <option value="all">All loaded sources</option>
+                </select>
+              </label>
+              <label>
+                Min magnitude
+                <input id="stats-mag-min" type="number" step="0.1" value="1" />
+              </label>
+              <label>
+                Max magnitude
+                <input id="stats-mag-max" type="number" step="0.1" value="10" />
+              </label>
+              <label>
+                Min depth (km)
+                <input id="stats-depth-min" type="number" step="1" value="0" />
+              </label>
+              <label>
+                Max depth (km)
+                <input id="stats-depth-max" type="number" step="1" value="700" />
+              </label>
+              <label>
+                Magnitude bucket size
+                <select id="stats-bucket-size">
+                  <option value="0.5">0.5</option>
+                  <option value="1" selected>1.0</option>
+                  <option value="2">2.0</option>
+                </select>
+              </label>
+            </div>
+            <div class="stats-toolbar-actions">
+              <button id="stats-apply-btn" class="stats-action-btn" type="button">Apply filters</button>
+              <button id="stats-reset-btn" class="stats-action-btn secondary" type="button">Reset</button>
+            </div>
+            <div id="stats-summary" class="stats-summary-text">Loading statistics...</div>
+          </section>
+
+          <section class="stats-kpi-grid">
+            <article class="stats-kpi-card">
+              <div class="stats-kpi-label">Filtered events</div>
+              <div class="stats-kpi-value" id="stats-kpi-count">-</div>
+              <div class="stats-kpi-sub" id="stats-kpi-count-sub">Waiting for data</div>
+            </article>
+            <article class="stats-kpi-card">
+              <div class="stats-kpi-label">Sources in view</div>
+              <div class="stats-kpi-value" id="stats-kpi-sources">-</div>
+              <div class="stats-kpi-sub" id="stats-kpi-sources-sub">Loaded agencies</div>
+            </article>
+            <article class="stats-kpi-card">
+              <div class="stats-kpi-label">Average magnitude</div>
+              <div class="stats-kpi-value" id="stats-kpi-avg-mag">-</div>
+              <div class="stats-kpi-sub" id="stats-kpi-avg-mag-sub">Across filtered events</div>
+            </article>
+            <article class="stats-kpi-card">
+              <div class="stats-kpi-label">Median magnitude</div>
+              <div class="stats-kpi-value" id="stats-kpi-median-mag">-</div>
+              <div class="stats-kpi-sub" id="stats-kpi-median-mag-sub">Middle event strength</div>
+            </article>
+            <article class="stats-kpi-card">
+              <div class="stats-kpi-label">Average depth</div>
+              <div class="stats-kpi-value" id="stats-kpi-avg-depth">-</div>
+              <div class="stats-kpi-sub" id="stats-kpi-avg-depth-sub">Mean hypocenter depth</div>
+            </article>
+            <article class="stats-kpi-card">
+              <div class="stats-kpi-label">Average event gap</div>
+              <div class="stats-kpi-value" id="stats-kpi-avg-gap">-</div>
+              <div class="stats-kpi-sub" id="stats-kpi-avg-gap-sub">Time between consecutive events</div>
+            </article>
+            <article class="stats-kpi-card stats-kpi-card-wide">
+              <div class="stats-kpi-label">Strongest event</div>
+              <div class="stats-kpi-value" id="stats-kpi-strongest">-</div>
+              <div class="stats-kpi-sub" id="stats-kpi-strongest-sub">No event selected yet</div>
+            </article>
+            <article class="stats-kpi-card stats-kpi-card-wide">
+              <div class="stats-kpi-label">Time span covered</div>
+              <div class="stats-kpi-value" id="stats-kpi-span">-</div>
+              <div class="stats-kpi-sub" id="stats-kpi-span-sub">Newest to oldest event</div>
+            </article>
+          </section>
+
+          <section class="stats-chart-grid">
+            <article class="stats-card stats-chart-card">
+              <div class="stats-card-title">Event Count by Magnitude Band</div>
+              <canvas id="stats-count-chart"></canvas>
+            </article>
+            <article class="stats-card stats-chart-card">
+              <div class="stats-card-title">Average Depth by Magnitude Band</div>
+              <canvas id="stats-depth-by-mag-chart"></canvas>
+            </article>
+            <article class="stats-card stats-chart-card">
+              <div class="stats-card-title">Average Gap by Magnitude Band</div>
+              <canvas id="stats-gap-chart"></canvas>
+            </article>
+            <article class="stats-card stats-chart-card">
+              <div class="stats-card-title">Events by UTC Hour</div>
+              <canvas id="stats-hourly-chart"></canvas>
+            </article>
+            <article class="stats-card stats-chart-card">
+              <div class="stats-card-title">Depth Distribution</div>
+              <canvas id="stats-depth-chart"></canvas>
+            </article>
+            <article class="stats-card stats-chart-card">
+              <div class="stats-card-title">Source Breakdown</div>
+              <canvas id="stats-source-chart"></canvas>
+            </article>
+            <article class="stats-card stats-chart-card">
+              <div class="stats-card-title">Events by Weekday</div>
+              <canvas id="stats-weekday-chart"></canvas>
+            </article>
+            <article class="stats-card stats-chart-card">
+              <div class="stats-card-title">Daily Event Trend</div>
+              <canvas id="stats-daily-trend-chart"></canvas>
+            </article>
+            <article class="stats-card stats-chart-card stats-chart-card-wide">
+              <div class="stats-card-title">Depth vs Magnitude Scatter</div>
+              <canvas id="stats-scatter-chart"></canvas>
+            </article>
+          </section>
+
+          <section class="stats-table-grid">
+            <article class="stats-card stats-table-card">
+              <div class="stats-card-title">Magnitude Band Breakdown</div>
+              <div id="stats-band-table" class="stats-table-wrap"></div>
+            </article>
+            <article class="stats-card stats-table-card">
+              <div class="stats-card-title">Source Summary</div>
+              <div id="stats-source-table" class="stats-table-wrap"></div>
+            </article>
+          </section>
+        </div>
+      </section>
+
+      <section id="quake-detail-panel" class="hidden">
+        <div id="quake-detail-header">
+          <div>
+            <div id="quake-detail-title">Event Details</div>
+            <div id="quake-detail-subtitle"></div>
+          </div>
+          <button id="quake-detail-close">✕</button>
+        </div>
+        <div id="quake-detail-content"></div>
+      </section>
+
+      <!-- 3D Simulation overlay -->
+      <section id="3dsim-view" class="main-view sim3d-panel hidden">
+        <iframe id="sim3d-iframe" src="./addon/3dsimulation/index.html" style="width:100%;height:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>
+      </section>
+
+      <!-- Sky Explorer overlay -->
+      <section id="skyexplorer-view" class="main-view hidden">
+        <iframe id="skyexplorer-iframe" src="./addon/skyExplorer.html" style="width:100%;height:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>
+      </section>
+
+      <!-- Volcanoes overlay (uses the main map, so this is just a placeholder shown when needed) -->
+
+      <!-- Atmosphere overlay -->
+      <section id="atmosphere-view" class="main-view atmosphere-panel hidden">
+        <div id="atmo-maps-container">
+          <div id="atmo-weather-map-wrap">
+            <div id="atmo-weather-map-header">
+              <span class="atmo-map-title">🌤 Weather &amp; Atmosphere</span>
+            </div>
+            <div id="atmo-weather-map"></div>
+          </div>
+          <div id="atmo-space-map-wrap">
+            <div id="atmo-space-map-header">
+              <span class="atmo-map-title">🛸 Space Weather</span>
+              <span id="atmo-kp-inline">Kp —</span>
+            </div>
+            <div id="atmo-space-map"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Notes editor overlay -->
+      <section id="notes-view" class="main-view notes-panel hidden">
+        <div class="notes-shell">
+          <div class="notes-head">
+            <h2>Notes</h2>
+            <p>Write observations, paste earthquake and asteroid data, and save your research.</p>
+          </div>
+          <div class="notes-toolbar">
+            <button type="button" class="notes-tool-btn" data-cmd="bold" title="Bold"><b>B</b></button>
+            <button type="button" class="notes-tool-btn" data-cmd="italic" title="Italic"><i>I</i></button>
+            <button type="button" class="notes-tool-btn" data-cmd="underline" title="Underline"><u>U</u></button>
+            <span class="notes-tool-sep"></span>
+            <select id="notes-font-size" class="notes-tool-select" title="Font size">
+              <option value="2">Small</option>
+              <option value="3" selected>Normal</option>
+              <option value="4">Large</option>
+              <option value="5">X-Large</option>
+            </select>
+            <select id="notes-heading" class="notes-tool-select" title="Heading">
+              <option value="">Paragraph</option>
+              <option value="H1">Heading 1</option>
+              <option value="H2">Heading 2</option>
+              <option value="H3">Heading 3</option>
+            </select>
+            <span class="notes-tool-sep"></span>
+            <button type="button" class="notes-tool-btn" data-cmd="insertUnorderedList" title="Bullet list">• List</button>
+            <button type="button" class="notes-tool-btn" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
+            <span class="notes-tool-sep"></span>
+            <button type="button" class="notes-tool-btn" data-cmd="justifyLeft" title="Align left">⫷</button>
+            <button type="button" class="notes-tool-btn" data-cmd="justifyCenter" title="Center">⫿</button>
+            <button type="button" class="notes-tool-btn" data-cmd="justifyRight" title="Align right">⫸</button>
+          </div>
+          <div id="notes-editor" contenteditable="true" spellcheck="true"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Waveform Panel (hidden by default) -->
+    <div id="waveform-panel" class="hidden">
+      <div id="waveform-header">
+        <span id="waveform-title">Waveform</span>
+        <button id="waveform-close">✕</button>
+      </div>
+      <div id="waveform-time-controls">
+        <span id="waveform-live-label">Window:</span>
+        <div id="waveform-window-btns" role="group" aria-label="Waveform time window">
+          <button class="window-btn active" data-seconds="60">1 min</button>
+          <button class="window-btn" data-seconds="600">10 min</button>
+          <button class="window-btn" data-seconds="3600">1 hr</button>
+        </div>
+        <span id="waveform-status"></span>
+      </div>
+      <div id="waveform-chart-wrap"><canvas id="waveform-chart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="gwn-copyright">© 2026 GWN - Erik Boivin</div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

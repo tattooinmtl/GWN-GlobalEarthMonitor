@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Asteroid Simulation</title>
+    <meta name="theme-color" content="#000000">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css?v=20260403b">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="js/app.js?v=20260403b"></script>
+</head>
+<body>
+    <!-- Fullscreen canvas -->
+    <div id="viewerFrame">
+        <canvas id="asteroidViewport"></canvas>
+    </div>
+
+    <!-- Top bar -->
+    <div id="topBar">
+        <span id="titleLabel">3D Asteroid Simulation</span>
+        <div id="statsRow">
+            <span class="stat-item">Objects: <strong id="statLoaded">--</strong></span>
+            <span class="stat-item">Hazardous: <strong id="statHazardous">--</strong></span>
+            <span class="stat-item">Fastest: <strong id="statFastest">--</strong></span>
+        </div>
+        <span id="dataSourceBadge">Initializing</span>
+        <div id="focusedBanner" class="focused-banner" style="display:none">
+            <span id="focusedLabel"></span>
+            <button id="exitFocusedBtn" type="button">✕ Back to full sim</button>
+        </div>
+    </div>
+
+    <!-- Controls bar -->
+    <div id="controlsBar">
+        <button id="playPauseBtn" type="button">Pause</button>
+        <button id="toggleOrbitsBtn" type="button">Hide Orbits</button>
+        <button id="followBtn" type="button">Follow On</button>
+        <button id="resetCameraBtn" type="button">Reset</button>
+        <button id="fullscreenBtn" type="button">Fullscreen</button>
+        <label class="ctrl-range">
+            <span>Speed</span>
+            <input id="speedSlider" type="range" min="0.25" max="6" step="0.25" value="1.25">
+            <strong id="speedValue">1.25x</strong>
+        </label>
+        <label class="ctrl-check">
+            <input id="hazardOnlyToggle" type="checkbox">
+            <span>Hazardous only</span>
+        </label>
+    </div>
+
+    <!-- Left sidebar -->
+    <div id="sidebar">
+        <div class="sb-heading">
+            <h2>Asteroids <span id="listCountBadge">0</span></h2>
+            <button id="hideSidebarBtn" type="button" title="Hide">&#x2715;</button>
+        </div>
+        <div id="asteroidList" class="object-list"></div>
+
+        <div class="sb-heading" style="margin-top:1rem">
+            <h2>Selected</h2>
+        </div>
+        <div id="selectedObjectPanel">
+            <div class="empty-state">Click an asteroid</div>
+        </div>
+
+        <div class="sb-heading" style="margin-top:1rem">
+            <h2>SkyMorph</h2>
+        </div>
+        <div class="search-row">
+            <input id="targetSearchInput" type="text" placeholder="Apophis, Bennu...">
+            <button id="targetSearchBtn" type="button">Go</button>
+        </div>
+        <p id="targetSearchStatus" class="search-status"></p>
+
+        <div class="sb-heading" style="margin-top:1rem">
+            <div class="feeds-tabs">
+                <button class="tab-btn tab-active" data-tab="asterank">Asterank <span id="asterankFeedCount">0</span></button>
+                <button class="tab-btn" data-tab="mpc">MPC <span id="mpcFeedCount">0</span></button>
+                <button class="tab-btn" data-tab="kepler">Kepler <span id="keplerFeedCount">0</span></button>
+                <button class="tab-btn" data-tab="skymorph">Sky <span id="skymorphFeedCount">0</span></button>
+            </div>
+            <button id="refreshFeedsBtn" type="button" title="Refresh">&#x21ba;</button>
+        </div>
+        <div id="asterankFeed" class="feed-list tab-pane tab-pane-active"></div>
+        <div id="mpcFeed" class="feed-list tab-pane"></div>
+        <div id="keplerFeed" class="feed-list tab-pane"></div>
+        <div id="skymorphFeed" class="feed-list tab-pane"></div>
+    </div>
+
+    <!-- Show sidebar button (shown when sidebar is hidden) -->
+    <button id="showSidebarBtn" type="button" style="display:none">&#x2630; Objects</button>
+
+    <!-- Selection label overlay -->
+    <div id="selectionOverlay">
+        <span id="selectionLabel">No asteroid selected</span>
+        <span id="objectCountBadge"></span>
+    </div>
+
+</body>
+</html>

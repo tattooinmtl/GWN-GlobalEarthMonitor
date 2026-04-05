@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Earth Danger Index</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-page: #f0efe9;
+  --bg-card: #ffffff;
+  --bg-well: #e8e7e1;
+  --text-1: #1a1a18;
+  --text-2: #6b6b67;
+  --text-3: #9b9b97;
+  --border: rgba(0,0,0,0.10);
+  --border-md: rgba(0,0,0,0.20);
+  --danger: #9b1c1c;
+  --ok: #3b6d11;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-page: #181816;
+    --bg-card: #222220;
+    --bg-well: #2c2c29;
+    --text-1: #f0efe9;
+    --text-2: #a0a09a;
+    --text-3: #666662;
+    --border: rgba(255,255,255,0.08);
+    --border-md: rgba(255,255,255,0.16);
+  }
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg-page);
+  color: var(--text-1);
+  padding: 24px 20px 40px;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+.sub { font-size: 12px; color: var(--text-3); margin-bottom: 18px; }
+.sec {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-3);
+  margin-bottom: 9px;
+}
+
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.btn {
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 7px 16px;
+  border-radius: var(--r-md);
+  border: 0.5px solid var(--border-md);
+  background: transparent;
+  color: var(--text-1);
+  cursor: pointer;
+  transition: background .12s;
+}
+.btn:hover { background: var(--bg-well); }
+.btn:active { transform: scale(.97); }
+.btn.on { background: var(--bg-well); }
+
+.card {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+}
+
+.score-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.score-num { font-size: 52px; font-weight: 600; line-height: 1; color: var(--text-1); }
+.score-denom { font-size: 20px; color: var(--text-3); font-weight: 400; }
+.score-right { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; }
+.level-pill { font-size: 13px; font-weight: 600; padding: 4px 14px; border-radius: 20px; }
+.updated { font-size: 11px; color: var(--text-3); }
+
+.bar-track { height: 10px; border-radius: 5px; background: var(--bg-well); overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 5px; width: 0%; transition: width .75s cubic-bezier(.4,0,.2,1); }
+
+.comp-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; }
+.comp-row + .comp-row { border-top: 0.5px solid var(--border); }
+.comp-label { font-size: 13px; color: var(--text-2); width: 168px; flex-shrink: 0; }
+.comp-track { flex: 1; height: 7px; border-radius: 4px; background: var(--bg-well); overflow: hidden; }
+.comp-fill { height: 100%; border-radius: 4px; width: 0%; transition: width .65s cubic-bezier(.4,0,.2,1); }
+.comp-val { font-size: 13px; font-weight: 600; color: var(--text-1); width: 46px; text-align: right; flex-shrink: 0; }
+.comp-wt { font-size: 11px; color: var(--text-3); width: 30px; text-align: right; flex-shrink: 0; }
+
+.metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 14px; }
+.metric-card { background: var(--bg-card); border: 0.5px solid var(--border); border-radius: var(--r-md); padding: 14px; }
+.m-label { font-size: 11px; color: var(--text-3); margin-bottom: 5px; }
+.m-value { font-size: 20px; font-weight: 600; color: var(--text-1); line-height: 1.1; margin-bottom: 2px; }
+.m-sub { font-size: 11px; color: var(--text-3); }
+
+.source-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.source-row:last-child { border-bottom: none; }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.s-name { font-size: 12px; font-weight: 600; color: var(--text-1); flex: 1; }
+.s-val { font-size: 12px; color: var(--text-2); max-width: 310px; text-align: right; }
+.pill-live {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #eaf3de;
+  color: var(--ok);
+  flex-shrink: 0;
+}
+.pill-error {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #fce4d4;
+  color: var(--danger);
+  flex-shrink: 0;
+}
+
+.formula { font-size: 12px; color: var(--text-2); line-height: 1.9; }
+.formula strong { font-size: 13px; font-weight: 600; color: var(--text-1); display: block; margin-bottom: 6px; }
+code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--bg-well);
+  color: var(--text-1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.hist-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 12px;
+  color: var(--text-2);
+  border-bottom: 0.5px solid var(--border);
+}
+.hist-row:last-child { border-bottom: none; }
+.hist-time { width: 72px; flex-shrink: 0; }
+.hist-score { flex: 1; font-weight: 600; color: var(--text-1); }
+
+.placeholder { font-size: 13px; color: var(--text-3); padding: 10px 0; text-align: center; }
+
+/* Asteroids */
+#asteroid-header-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+#asteroid-filter-row {
+  display: grid;
+  grid-template-columns: 1fr 180px 180px;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+#asteroid-search,
+#asteroid-source-filter,
+#asteroid-sort {
+  background: var(--bg-card);
+  border: 0.5px solid var(--border-md);
+  border-radius: 8px;
+  color: var(--text-1);
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+#asteroid-status {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+#asteroid-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 12px;
+  min-height: 340px;
+}
+
+#asteroid-list-wrap,
+#asteroid-detail-wrap {
+  border: 0.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-card);
+}
+
+#asteroid-list {
+  list-style: none;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.asteroid-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--text-1);
+  cursor: pointer;
+  padding: 10px 12px;
+  border-bottom: 0.5px solid var(--border);
+}
+.asteroid-item:hover { background: var(--bg-well); }
+.asteroid-item.active { background: var(--bg-well); }
+
+.asteroid-name { font-size: 13px; font-weight: 600; }
+.asteroid-meta { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+#asteroid-detail-wrap {
+  padding: 14px;
+}
+
+#asteroid-detail-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+#asteroid-detail-source {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-bottom: 10px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 6px 10px;
+  font-size: 12px;
+}
+
+.detail-key {
+  color: var(--text-3);
+}
+
+.detail-value {
+  color: var(--text-1);
+  word-break: break-word;
+}
+
+@media (max-width: 900px) {
+  #asteroid-filter-row { grid-template-columns: 1fr; }
+  #asteroid-layout { grid-template-columns: 1fr; }
+  #asteroid-list { max-height: 220px; }
+}
+
+@media (max-width: 520px) {
+  .metric-grid { grid-template-columns: repeat(2, 1fr); }
+  .comp-label { width: 110px; }
+  .comp-wt { display: none; }
+}
+</style>
+</head>
+<body>
+
+<h1>Earth Danger Index</h1>
+<p class="sub">Real-time threat assessment with asteroid intelligence list and detail view</p>
+
+<div class="btn-row">
+  <button class="btn" id="refresh-btn" onclick="refresh()">Refresh danger data</button>
+  <button class="btn" id="auto-btn" onclick="toggleAuto()">Auto-refresh: OFF</button>
+</div>
+
+<div class="card">
+  <div class="score-top">
+    <div>
+      <div class="sec">Earth Danger Index</div>
+      <div>
+        <span class="score-num" id="total-score">-</span>
+        <span class="score-denom"> / 100</span>
+      </div>
+    </div>
+    <div class="score-right">
+      <span class="level-pill" id="level-pill" style="background:var(--bg-well);color:var(--text-3);">Loading</span>
+      <span class="updated" id="updated-time">Waiting for data...</span>
+    </div>
+  </div>
+  <div class="bar-track"><div class="bar-fill" id="main-bar"></div></div>
+</div>
+
+<div class="sec">Component scores (weighted)</div>
+<div class="card" style="padding: 10px 20px;">
+  <div class="comp-row"><span class="comp-label">Space weather (Kp)</span><div class="comp-track"><div class="comp-fill" id="bar-kp" style="background:#d85a30;"></div></div><span class="comp-val" id="val-kp">-</span><span class="comp-wt">25%</span></div>
+  <div class="comp-row"><span class="comp-label">Solar X-ray flux</span><div class="comp-track"><div class="comp-fill" id="bar-xray" style="background:#d85a30;"></div></div><span class="comp-val" id="val-xray">-</span><span class="comp-wt">20%</span></div>
+  <div class="comp-row"><span class="comp-label">NEO close approach</span><div class="comp-track"><div class="comp-fill" id="bar-neo" style="background:#ba7517;"></div></div><span class="comp-val" id="val-neo">-</span><span class="comp-wt">20%</span></div>
+  <div class="comp-row"><span class="comp-label">Fireball energy (30d)</span><div class="comp-track"><div class="comp-fill" id="bar-fire" style="background:#ba7517;"></div></div><span class="comp-val" id="val-fire">-</span><span class="comp-wt">10%</span></div>
+  <div class="comp-row"><span class="comp-label">Lunar tidal force</span><div class="comp-track"><div class="comp-fill" id="bar-moon" style="background:#7f77dd;"></div></div><span class="comp-val" id="val-moon">-</span><span class="comp-wt">10%</span></div>
+  <div class="comp-row"><span class="comp-label">Planetary alignment</span><div class="comp-track"><div class="comp-fill" id="bar-planet" style="background:#7f77dd;"></div></div><span class="comp-val" id="val-planet">-</span><span class="comp-wt">10%</span></div>
+  <div class="comp-row"><span class="comp-label">Impact risk (Sentry)</span><div class="comp-track"><div class="comp-fill" id="bar-sentry" style="background:#e24b4a;"></div></div><span class="comp-val" id="val-sentry">-</span><span class="comp-wt">5%</span></div>
+</div>
+
+<div class="metric-grid">
+  <div class="metric-card"><div class="m-label">Kp index</div><div class="m-value" id="m-kp">-</div><div class="m-sub">Geomagnetic</div></div>
+  <div class="metric-card"><div class="m-label">X-ray class</div><div class="m-value" id="m-xray">-</div><div class="m-sub">GOES satellite</div></div>
+  <div class="metric-card"><div class="m-label">Nearest NEO</div><div class="m-value" id="m-neo">-</div><div class="m-sub">AU from Earth</div></div>
+  <div class="metric-card"><div class="m-label">Moon phase</div><div class="m-value" id="m-moon">-</div><div class="m-sub">Tidal influence</div></div>
+</div>
+
+<div class="sec">Live data sources</div>
+<div class="card" style="padding: 4px 20px;" id="sources-panel">
+  <div class="placeholder">Fetching...</div>
+</div>
+
+<div class="card formula">
+  <strong>Algorithm formula</strong>
+  <code>DangerIndex = Sigma(component_score x weight) / Sigma(weights) x 100</code><br>
+  Weights: Kp <code>0.25</code> X-ray <code>0.20</code> NEO <code>0.20</code> Fireball <code>0.10</code> Moon <code>0.10</code> Planets <code>0.10</code> Sentry <code>0.05</code>
+</div>
+
+<div class="sec">Reading history (session)</div>
+<div class="card" style="padding: 4px 20px;" id="history-panel">
+  <div class="placeholder">No readings yet.</div>
+</div>
+
+<div class="sec">Asteroids</div>
+<div class="card">
+  <div id="asteroid-header-row">
+    <button class="btn" id="asteroid-load-btn" onclick="loadAllAsteroids()">Load all asteroid feeds</button>
+    <button class="btn" id="asteroid-reload-btn" onclick="loadAllAsteroids(true)">Reload</button>
+    <span id="asteroid-status">No asteroid data loaded yet.</span>
+  </div>
+
+  <div id="asteroid-filter-row">
+    <input id="asteroid-search" type="text" placeholder="Search asteroid name..." />
+    <select id="asteroid-source-filter">
+      <option value="all">All sources</option>
+      <option value="NASA CAD">NASA CAD</option>
+      <option value="NASA Sentry">NASA Sentry</option>
+      <option value="NASA NeoWs">NASA NeoWs</option>
+      <option value="MPC NEOCP">MPC NEOCP</option>
+    </select>
+    <select id="asteroid-sort">
+      <option value="risk">Sort: Risk first</option>
+      <option value="distance">Sort: Closest first</option>
+      <option value="name">Sort: Name</option>
+    </select>
+  </div>
+
+  <div id="asteroid-layout">
+    <div id="asteroid-list-wrap">
+      <ul id="asteroid-list"></ul>
+    </div>
+    <div id="asteroid-detail-wrap">
+      <div id="asteroid-detail-title">Select an asteroid</div>
+      <div id="asteroid-detail-source"></div>
+      <div id="asteroid-detail-extra" style="font-size:11px;color:var(--text-3);margin-bottom:8px;"></div>
+      <div class="detail-grid" id="asteroid-detail-grid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function levelInfo(s) {
+  if (s >= 80) return { label: 'CRITICAL', bg: '#f7c1c1', fg: '#791f1f' }
+  if (s >= 60) return { label: 'HIGH', bg: '#f5c4b3', fg: '#993c1d' }
+  if (s >= 40) return { label: 'ELEVATED', bg: '#fac775', fg: '#633806' }
+  if (s >= 20) return { label: 'MODERATE', bg: '#c0dd97', fg: '#27500a' }
+  return { label: 'LOW', bg: '#9fe1cb', fg: '#085041' }
+}
+
+function barColor(s) {
+  if (s >= 80) return '#e24b4a'
+  if (s >= 60) return '#d85a30'
+  if (s >= 40) return '#ba7517'
+  if (s >= 20) return '#639922'
+  return '#1d9e75'
+}
+
+function el(id) { return document.getElementById(id) }
+
+function setBar(fillId, valId, score) {
+  const safe = Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : 0
+  el(fillId).style.width = safe + '%'
+  el(valId).textContent = safe + '%'
+}
+
+const readings = []
+let asteroidRecords = []
+let asteroidSelectedId = null
+let asteroidDetailEnrichInFlight = false
+
+function safeFixed(value, digits = 1, fallback = '-') {
+  return Number.isFinite(value) ? value.toFixed(digits) : fallback
+}
+
+function render(r) {
+  const c = r.components
+  const lvl = levelInfo(r.dangerIndex)
+  const col = barColor(r.dangerIndex)
+
+  el('total-score').textContent = r.dangerIndex
+  const lp = el('level-pill')
+  lp.textContent = lvl.label
+  lp.style.background = lvl.bg
+  lp.style.color = lvl.fg
+  el('updated-time').textContent = 'Updated ' + new Date(r.timestamp).toLocaleTimeString()
+
+  const mb = el('main-bar')
+  mb.style.width = r.dangerIndex + '%'
+  mb.style.background = col
+
+  setBar('bar-kp', 'val-kp', c.kp.score)
+  setBar('bar-xray', 'val-xray', c.xray.score)
+  setBar('bar-neo', 'val-neo', c.neo.score)
+  setBar('bar-fire', 'val-fire', c.fireball.score)
+  setBar('bar-moon', 'val-moon', c.moon.score)
+  setBar('bar-planet', 'val-planet', c.planets.score)
+  setBar('bar-sentry', 'val-sentry', c.sentry.score)
+
+  el('m-kp').textContent = safeFixed(c.kp.rawValue, 1)
+  el('m-xray').textContent = c.xray.flareClass ? c.xray.flareClass + '-class' : '-'
+  el('m-neo').textContent = Number.isFinite(c.neo.distAU) ? c.neo.distAU.toFixed(4) + ' AU' : '-'
+  el('m-moon').textContent = c.moon.phaseName || '-'
+
+  const sources = [
+    {
+      dot: '#d85a30',
+      name: 'NOAA SWPC - Kp index',
+      val: Number.isFinite(c.kp.rawValue) ? 'Kp ' + c.kp.rawValue.toFixed(1) : 'Unavailable',
+      error: !!c.kp.error
+    },
+    {
+      dot: '#d85a30',
+      name: 'NOAA SWPC - X-ray flux',
+      val: Number.isFinite(c.xray.rawValue) ? c.xray.flareClass + '-class (' + c.xray.rawValue.toExponential(1) + ')' : 'Unavailable',
+      error: !!c.xray.error
+    },
+    {
+      dot: '#ba7517',
+      name: 'NASA CNEOS - close approach',
+      val: Number.isFinite(c.neo.distAU) ? (c.neo.name || 'Unknown') + ' @ ' + c.neo.distAU.toFixed(4) + ' AU' : 'Unavailable',
+      error: !!c.neo.error
+    },
+    {
+      dot: '#ba7517',
+      name: 'NASA CNEOS - fireballs (30d)',
+      val: Number.isFinite(c.fireball.maxKt) ? c.fireball.count30d + ' events, max ' + c.fireball.maxKt.toFixed(1) + ' kt' : 'Unavailable',
+      error: !!c.fireball.error
+    },
+    {
+      dot: '#e24b4a',
+      name: 'NASA Sentry - impact risk',
+      val: Number.isFinite(c.sentry.count) ? c.sentry.count + ' objects tracked' : 'Unavailable',
+      error: !!c.sentry.error
+    },
+    {
+      dot: '#7f77dd',
+      name: 'Lunar tidal (computed)',
+      val: 'Phase: ' + (c.moon.phaseName || '-') + ' score ' + c.moon.score + '%',
+      error: false
+    },
+    {
+      dot: '#7f77dd',
+      name: 'Planetary alignment (computed)',
+      val: 'Alignment score ' + c.planets.score + '%',
+      error: false
+    }
+  ]
+
+  el('sources-panel').innerHTML = sources.map(s => `
+    <div class="source-row">
+      <div class="dot" style="background:${s.dot};"></div>
+      <span class="s-name">${s.name}</span>
+      <span class="s-val">${s.val}</span>
+      <span class="${s.error ? 'pill-error' : 'pill-live'}">${s.error ? 'unavailable' : 'live'}</span>
+    </div>`).join('')
+
+  readings.unshift({ time: new Date(r.timestamp).toLocaleTimeString(), score: r.dangerIndex, lvl: lvl })
+  if (readings.length > 12) readings.pop()
+
+  el('history-panel').innerHTML = readings.map(h => `
+    <div class="hist-row">
+      <span class="hist-time">${h.time}</span>
+      <span class="hist-score">${h.score} / 100</span>
+      <span class="level-pill" style="font-size:11px;padding:2px 10px;background:${h.lvl.bg};color:${h.lvl.fg};">${h.lvl.label}</span>
+    </div>`).join('')
+}
+
+async function getDangerData() {
+  return await fetchFallback()
+}
+
+async function refresh() {
+  el('updated-time').textContent = 'Fetching...'
+  el('total-score').textContent = '-'
+  el('level-pill').textContent = '...'
+  el('level-pill').style.background = 'var(--bg-well)'
+  el('level-pill').style.color = 'var(--text-3)'
+
+  try {
+    const data = await getDangerData()
+    render(data)
+  } catch (err) {
+    el('updated-time').textContent = 'Error: ' + err.message
+    console.error(err)
+  }
+}
+
+let autoTimer = null
+
+function toggleAuto() {
+  const btn = el('auto-btn')
+  if (autoTimer) {
+    clearInterval(autoTimer)
+    autoTimer = null
+    btn.textContent = 'Auto-refresh: OFF'
+    btn.classList.remove('on')
+  } else {
+    autoTimer = setInterval(refresh, 60000)
+    btn.textContent = 'Auto-refresh: ON (1 min)'
+    btn.classList.add('on')
+  }
+}
+
+async function fetchJson(url, sourceName) {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(sourceName + ' HTTP ' + res.status)
+  return await res.json()
+}
+
+async function fetchFallback() {
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) }
+
+  async function fKp() {
+    try {
+      const d = await fetchJson('https://services.swpc.noaa.gov/json/planetary_k_index_1m.json', 'NOAA Kp')
+      const last = d[d.length - 1]
+      return { value: parseFloat(last.kp_index ?? last.Kp ?? NaN), error: false }
+    } catch {
+      return { value: null, error: true }
+    }
+  }
+
+  async function fXray() {
+    try {
+      const d = await fetchJson('https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json', 'NOAA Xray')
+      for (let i = d.length - 1; i >= 0; i--) {
+        const f = parseFloat(d[i]['flux_1_0'] ?? d[i].flux ?? NaN)
+        if (f > 0) return { value: f, error: false }
+      }
+      return { value: null, error: true }
+    } catch {
+      return { value: null, error: true }
+    }
+  }
+
+  async function fNEO() {
+    try {
+      const t = new Date().toISOString().split('T')[0]
+      const e = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
+      const d = await fetchJson('https://ssd-api.jpl.nasa.gov/cad.api?dist-max=0.5&sort=dist&limit=1&date-min=' + t + '&date-max=' + e, 'NASA CAD')
+      if (Array.isArray(d.data) && d.data.length) {
+        const o = d.data[0]
+        return {
+          name: o[0],
+          distAU: parseFloat(o[4]),
+          approachDate: o[3],
+          velocityKmS: parseFloat(o[7] ?? NaN),
+          error: false
+        }
+      }
+      return { name: null, distAU: null, approachDate: 'N/A', velocityKmS: null, error: true }
+    } catch {
+      return { name: null, distAU: null, approachDate: 'N/A', velocityKmS: null, error: true }
+    }
+  }
+
+  async function fFire() {
+    try {
+      const d = await fetchJson('https://ssd-api.jpl.nasa.gov/fireball.api?limit=150', 'NASA Fireballs')
+      const cutoff = Date.now() - 30 * 86400000
+      let maxKt = null
+      let count = 0
+
+      if (Array.isArray(d.data)) {
+        for (const ev of d.data) {
+          const ts = Date.parse(ev[0])
+          if (!Number.isFinite(ts) || ts < cutoff) continue
+          const energy = parseFloat(ev[2] ?? NaN)
+          if (!Number.isFinite(energy)) continue
+          count += 1
+          if (!Number.isFinite(maxKt) || energy > maxKt) maxKt = energy
+        }
+      }
+
+      return { maxKt: maxKt, count: count, error: false }
+    } catch {
+      return { maxKt: null, count: 0, error: true }
+    }
+  }
+
+  async function fSentry() {
+    try {
+      const d = await fetchJson('https://ssd-api.jpl.nasa.gov/sentry.api', 'NASA Sentry')
+      let maxProb = null
+      let best = null
+      const rows = Array.isArray(d.data) ? d.data : []
+      for (const obj of rows) {
+        const prob = parseFloat(obj.ip ?? obj.prob ?? NaN)
+        if (!Number.isFinite(prob)) continue
+        if (!Number.isFinite(maxProb) || prob > maxProb) {
+          maxProb = prob
+          best = { name: obj.des || 'Unknown', range: obj.range || 'N/A', prob: prob }
+        }
+      }
+      return { maxProb: maxProb, count: rows.length, mostDangerous: best, error: false }
+    } catch {
+      return { maxProb: null, count: null, mostDangerous: null, error: true }
+    }
+  }
+
+  function scoreKp(k) { if (!Number.isFinite(k)) return 0; return clamp(Math.round(k / 9 * 100), 0, 100) }
+  function scoreXray(f) {
+    if (!Number.isFinite(f)) return 0
+    if (f >= 1e-4) return 100
+    if (f >= 1e-5) return 75
+    if (f >= 1e-6) return 45
+    if (f >= 1e-7) return 20
+    return 5
+  }
+  function xrayLabel(f) {
+    if (!Number.isFinite(f)) return null
+    if (f >= 1e-4) return 'X'
+    if (f >= 1e-5) return 'M'
+    if (f >= 1e-6) return 'C'
+    if (f >= 1e-7) return 'B'
+    return 'A'
+  }
+  function scoreNeo(d) { if (!Number.isFinite(d)) return 0; return d > 0.5 ? 0 : clamp(Math.round((1 - d / 0.5) * 100), 0, 100) }
+  function scoreFire(e) { if (!Number.isFinite(e) || e <= 0) return 0; return clamp(Math.round(Math.log10(e + 1) / 2 * 100), 0, 100) }
+  function scoreMoon(d) {
+    const cycle = ((d % 29.53) + 29.53) % 29.53
+    const angle = cycle / 29.53 * 2 * Math.PI
+    return Math.round((1 - Math.cos(2 * angle)) / 2 * 100)
+  }
+  function scorePlanets(j) {
+    const P = 2 * Math.PI
+    const e = P * j / 365.25
+    const v = P * j / 224.7
+    const ma = P * j / 686.97
+    const ju = P * j / 4332.59
+    const sa = P * j / 10759.22
+    return Math.round((Math.abs(Math.cos(e - ju)) * 1 + Math.abs(Math.cos(e - sa)) * 0.6 + Math.abs(Math.cos(e - v)) * 0.5 + Math.abs(Math.cos(e - ma)) * 0.2) / 2.3 * 100)
+  }
+  function scoreSentry(p) {
+    if (!Number.isFinite(p) || p <= 0) return 0
+    return clamp(Math.round((Math.log10(p) + 5) / 5 * 100), 0, 100)
+  }
+
+  const W = { kp: 0.25, xray: 0.2, neo: 0.2, fireball: 0.1, moon: 0.1, planets: 0.1, sentry: 0.05 }
+  function weightedIndex(scores) {
+    let sum = 0
+    let totalWeight = 0
+    for (const key of Object.keys(W)) {
+      sum += (scores[key] ?? 0) * W[key]
+      totalWeight += W[key]
+    }
+    return Math.round(sum / totalWeight)
+  }
+
+  function dangerLevel(s) {
+    if (s >= 80) return 'CRITICAL'
+    if (s >= 60) return 'HIGH'
+    if (s >= 40) return 'ELEVATED'
+    if (s >= 20) return 'MODERATE'
+    return 'LOW'
+  }
+
+  const parts = await Promise.all([fKp(), fXray(), fNEO(), fFire(), fSentry()])
+  const kpD = parts[0]
+  const xrD = parts[1]
+  const neoD = parts[2]
+  const fireD = parts[3]
+  const sentryD = parts[4]
+
+  const J2000 = new Date('2000-01-01T12:00:00Z').getTime()
+  const NEW_MOON_REF = new Date('2024-01-11T11:57:00Z').getTime()
+  const now = Date.now()
+  const daysSinceJ2000 = (now - J2000) / 86400000
+  const daysSinceNewMoon = (now - NEW_MOON_REF) / 86400000
+  const phaseCycle = ((daysSinceNewMoon % 29.53) + 29.53) % 29.53
+  const phases = ['New Moon', 'Waxing Crescent', 'First Quarter', 'Waxing Gibbous', 'Full Moon', 'Waning Gibbous', 'Last Quarter', 'Waning Crescent']
+  const phaseName = phases[Math.floor(phaseCycle / 29.53 * 8) % 8]
+
+  const scores = {
+    kp: scoreKp(kpD.value),
+    xray: scoreXray(xrD.value),
+    neo: scoreNeo(neoD.distAU),
+    fireball: scoreFire(fireD.maxKt),
+    moon: scoreMoon(daysSinceNewMoon),
+    planets: scorePlanets(daysSinceJ2000),
+    sentry: scoreSentry(sentryD.maxProb)
+  }
+
+  const dangerIndex = weightedIndex(scores)
+
+  return {
+    dangerIndex: dangerIndex,
+    level: dangerLevel(dangerIndex),
+    timestamp: new Date().toISOString(),
+    components: {
+      kp: { score: scores.kp, rawValue: kpD.value, weight: W.kp, error: kpD.error },
+      xray: { score: scores.xray, rawValue: xrD.value, flareClass: xrayLabel(xrD.value), weight: W.xray, error: xrD.error },
+      neo: { score: scores.neo, distAU: neoD.distAU, name: neoD.name, approachDate: neoD.approachDate, velocityKmS: neoD.velocityKmS, weight: W.neo, error: neoD.error },
+      fireball: { score: scores.fireball, maxKt: fireD.maxKt, count30d: fireD.count, weight: W.fireball, error: fireD.error },
+      moon: { score: scores.moon, phaseName: phaseName, daysSinceNewMoon: parseFloat(daysSinceNewMoon.toFixed(2)), weight: W.moon, error: false },
+      planets: { score: scores.planets, daysSinceJ2000: Math.round(daysSinceJ2000), weight: W.planets, error: false },
+      sentry: { score: scores.sentry, maxProb: sentryD.maxProb, count: sentryD.count, mostDangerous: sentryD.mostDangerous, weight: W.sentry, error: sentryD.error }
+    }
+  }
+}
+
+async function fetchCadAsteroids() {
+  const start = new Date().toISOString().split('T')[0]
+  const end = new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0]
+  const url = 'https://ssd-api.jpl.nasa.gov/cad.api?dist-max=1&sort=dist&limit=200&date-min=' + start + '&date-max=' + end
+  const data = await fetchJson(url, 'NASA CAD')
+  const rows = Array.isArray(data.data) ? data.data : []
+
+  return rows.map((r, idx) => {
+    const name = r[0] || 'Unknown'
+    const closeApproachDate = r[3] || 'N/A'
+    const distAU = parseFloat(r[4] ?? NaN)
+    const vrel = parseFloat(r[7] ?? NaN)
+    const h = parseFloat(r[10] ?? NaN)
+
+    return {
+      id: 'cad-' + idx + '-' + name,
+      source: 'NASA CAD',
+      name: name,
+      distanceAU: Number.isFinite(distAU) ? distAU : null,
+      riskScore: 0,
+      metaLine: Number.isFinite(distAU) ? ('Dist ' + distAU.toFixed(5) + ' AU') : 'Dist unknown',
+      sbdbLookup: name,
+      details: {
+        'Source': 'NASA CAD',
+        'Object name': name,
+        'Close approach date': closeApproachDate,
+        'Distance (AU)': Number.isFinite(distAU) ? distAU.toFixed(6) : 'Unknown',
+        'Relative velocity (km/s)': Number.isFinite(vrel) ? vrel.toFixed(3) : 'Unknown',
+        'Absolute magnitude H': Number.isFinite(h) ? h.toFixed(2) : 'Unknown',
+        'Raw row index': String(idx)
+      }
+    }
+  })
+}
+
+async function fetchSentryAsteroids() {
+  const data = await fetchJson('https://ssd-api.jpl.nasa.gov/sentry.api', 'NASA Sentry')
+  const rows = Array.isArray(data.data) ? data.data : []
+
+  return rows.slice(0, 300).map((obj, idx) => {
+    const name = obj.des || 'Unknown'
+    const ip = parseFloat(obj.ip ?? obj.prob ?? NaN)
+    const maxPS = parseFloat(obj.ps_max ?? NaN)
+
+    return {
+      id: 'sentry-' + idx + '-' + name,
+      source: 'NASA Sentry',
+      name: name,
+      distanceAU: null,
+      riskScore: Number.isFinite(ip) ? ip : 0,
+      metaLine: Number.isFinite(ip) ? ('IP ' + ip.toExponential(2)) : 'IP unknown',
+      sbdbLookup: name,
+      details: {
+        'Source': 'NASA Sentry',
+        'Object name': name,
+        'Impact probability': Number.isFinite(ip) ? ip.toExponential(6) : 'Unknown',
+        'Palermo scale max': Number.isFinite(maxPS) ? maxPS.toFixed(3) : 'Unknown',
+        'Impact date range': obj.range || 'Unknown',
+        'Potential impact years': obj.n_imp || 'Unknown'
+      }
+    }
+  })
+}
+
+async function fetchNeoWsAsteroids() {
+  const start = new Date().toISOString().split('T')[0]
+  const primaryUrl = 'https://api.nasa.gov/neo/rest/v1/feed?start_date=' + start + '&api_key=dhAW7YN0FhjazKlxUM6rCqhquUXgaY9k6WGuObuw'
+  const fallbackUrl = 'https://api.nasa.gov/neo/rest/v1/feed?start_date=' + start + '&api_key=DEMO_KEY'
+  let data
+  try {
+    data = await fetchJson(primaryUrl, 'NASA NeoWs')
+  } catch (err) {
+    if (!/HTTP 403|HTTP 429/.test(String(err?.message || ''))) throw err
+    data = await fetchJson(fallbackUrl, 'NASA NeoWs fallback')
+  }
+  const byDate = data?.near_earth_objects || {}
+  const rows = []
+
+  for (const dateKey of Object.keys(byDate)) {
+    const arr = Array.isArray(byDate[dateKey]) ? byDate[dateKey] : []
+    for (const obj of arr) rows.push(obj)
+  }
+
+  return rows.slice(0, 250).map((obj, idx) => {
+    const name = obj?.name || 'Unknown'
+    const ca = Array.isArray(obj?.close_approach_data) ? obj.close_approach_data[0] : null
+    const distKm = parseFloat(ca?.miss_distance?.kilometers ?? NaN)
+    const distAu = parseFloat(ca?.miss_distance?.astronomical ?? NaN)
+    const diameter = obj?.estimated_diameter?.meters
+    const diaMin = parseFloat(diameter?.estimated_diameter_min ?? NaN)
+    const diaMax = parseFloat(diameter?.estimated_diameter_max ?? NaN)
+
+    return {
+      id: 'neows-' + idx + '-' + name,
+      source: 'NASA NeoWs',
+      name,
+      distanceAU: Number.isFinite(distAu) ? distAu : null,
+      riskScore: obj?.is_potentially_hazardous_asteroid ? 1e-3 : 0,
+      metaLine: Number.isFinite(distAu) ? ('Dist ' + distAu.toFixed(5) + ' AU') : 'Dist unknown',
+      sbdbLookup: obj?.id || name,
+      details: {
+        'Source': 'NASA NeoWs',
+        'Object name': name,
+        'NASA NEO id': obj?.id || 'Unknown',
+        'Potentially hazardous': obj?.is_potentially_hazardous_asteroid ? 'Yes' : 'No',
+        'Close approach date': ca?.close_approach_date || 'Unknown',
+        'Distance (AU)': Number.isFinite(distAu) ? distAu.toFixed(6) : 'Unknown',
+        'Distance (km)': Number.isFinite(distKm) ? Math.round(distKm).toLocaleString() : 'Unknown',
+        'Estimated diameter min (m)': Number.isFinite(diaMin) ? diaMin.toFixed(1) : 'Unknown',
+        'Estimated diameter max (m)': Number.isFinite(diaMax) ? diaMax.toFixed(1) : 'Unknown'
+      }
+    }
+  })
+}
+
+async function fetchMpcNeocpAsteroids() {
+  const url = 'https://www.minorplanetcenter.net/Extended_Files/neocp.json'
+  const rows = await fetchJson(url, 'MPC NEOCP')
+  const arr = Array.isArray(rows) ? rows : []
+
+  return arr.slice(0, 300).map((obj, idx) => {
+    const name = obj?.Temp_Desig || obj?.desig || obj?.Designation || 'Unknown'
+    const score = parseFloat(obj?.Score ?? obj?.score ?? NaN)
+    const v = parseFloat(obj?.V ?? obj?.v ?? NaN)
+
+    return {
+      id: 'mpc-' + idx + '-' + name,
+      source: 'MPC NEOCP',
+      name,
+      distanceAU: null,
+      riskScore: Number.isFinite(score) ? score / 100 : 0,
+      metaLine: Number.isFinite(score) ? ('Score ' + score.toFixed(1)) : 'Score unknown',
+      sbdbLookup: name,
+      details: {
+        'Source': 'MPC NEOCP',
+        'Temporary designation': name,
+        'MPC score': Number.isFinite(score) ? score.toFixed(1) : 'Unknown',
+        'Visual magnitude (V)': Number.isFinite(v) ? v.toFixed(2) : 'Unknown',
+        'Observation arc': obj?.Arc || obj?.arc || 'Unknown',
+        'Updated': obj?.Updated || obj?.updated || 'Unknown'
+      }
+    }
+  })
+}
+
+function getFilteredAsteroids() {
+  const sourceFilter = el('asteroid-source-filter')?.value || 'all'
+  const sortMode = el('asteroid-sort')?.value || 'risk'
+  const query = (el('asteroid-search')?.value || '').trim().toLowerCase()
+
+  let rows = asteroidRecords
+
+  if (sourceFilter !== 'all') {
+    rows = rows.filter(a => a.source === sourceFilter)
+  }
+  if (query) {
+    rows = rows.filter(a => (a.name || '').toLowerCase().includes(query))
+  }
+
+  const sorted = [...rows]
+  if (sortMode === 'name') {
+    sorted.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+  } else if (sortMode === 'distance') {
+    sorted.sort((a, b) => {
+      const av = Number.isFinite(a.distanceAU) ? a.distanceAU : Number.POSITIVE_INFINITY
+      const bv = Number.isFinite(b.distanceAU) ? b.distanceAU : Number.POSITIVE_INFINITY
+      return av - bv
+    })
+  } else {
+    sorted.sort((a, b) => {
+      const rv = (b.riskScore || 0) - (a.riskScore || 0)
+      if (Math.abs(rv) > 0) return rv
+      const ad = Number.isFinite(a.distanceAU) ? a.distanceAU : Number.POSITIVE_INFINITY
+      const bd = Number.isFinite(b.distanceAU) ? b.distanceAU : Number.POSITIVE_INFINITY
+      return ad - bd
+    })
+  }
+  return sorted
+}
+
+function syncSelectedFromFiltered(filtered) {
+  if (!filtered.length) {
+    asteroidSelectedId = null
+    return
+  }
+  if (!asteroidSelectedId || !filtered.some(a => a.id === asteroidSelectedId)) {
+    asteroidSelectedId = filtered[0].id
+  }
+}
+
+function renderAsteroidList() {
+  const list = el('asteroid-list')
+  const filtered = getFilteredAsteroids()
+  syncSelectedFromFiltered(filtered)
+
+  if (!filtered.length) {
+    list.innerHTML = '<li class="placeholder">No asteroid records loaded.</li>'
+    el('asteroid-detail-title').textContent = 'Select an asteroid'
+    el('asteroid-detail-source').textContent = ''
+    el('asteroid-detail-extra').textContent = ''
+    el('asteroid-detail-grid').innerHTML = ''
+    return
+  }
+
+  list.innerHTML = filtered.map(a => `
+    <li>
+      <button class="asteroid-item ${a.id === asteroidSelectedId ? 'active' : ''}" data-id="${a.id}">
+        <div class="asteroid-name">${a.name}</div>
+        <div class="asteroid-meta">${a.source} · ${a.metaLine}</div>
+      </button>
+    </li>`).join('')
+
+  for (const btn of list.querySelectorAll('.asteroid-item')) {
+    btn.addEventListener('click', () => {
+      asteroidSelectedId = btn.dataset.id
+      renderAsteroidList()
+      renderAsteroidDetail()
+    })
+  }
+}
+
+function renderAsteroidDetail() {
+  const selected = asteroidRecords.find(a => a.id === asteroidSelectedId)
+  if (!selected) return
+
+  el('asteroid-detail-title').textContent = selected.name
+  el('asteroid-detail-source').textContent = selected.source
+  el('asteroid-detail-extra').textContent = Number.isFinite(selected.distanceAU)
+    ? ('Distance: ' + selected.distanceAU.toFixed(6) + ' AU')
+    : 'Distance: Unknown'
+
+  const rows = Object.entries(selected.details).map(([k, v]) => `
+    <div class="detail-key">${k}</div>
+    <div class="detail-value">${v}</div>`).join('')
+  el('asteroid-detail-grid').innerHTML = rows
+
+  // Optional deep enrichment from JPL SBDB for richer details.
+  void enrichAsteroidFromSbdb(selected)
+}
+
+async function enrichAsteroidFromSbdb(selected) {
+  if (!selected || !selected.sbdbLookup || selected.sbdbLoaded || asteroidDetailEnrichInFlight) return
+  asteroidDetailEnrichInFlight = true
+  try {
+    const lookup = encodeURIComponent(selected.sbdbLookup)
+    const data = await fetchJson('https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=' + lookup, 'JPL SBDB')
+    const obj = data?.object || {}
+    const phys = data?.phys_par || {}
+    if (obj || phys) {
+      if (obj.fullname) selected.details['SBDB full name'] = obj.fullname
+      if (obj.des) selected.details['SBDB designation'] = obj.des
+      if (phys.diameter) selected.details['SBDB diameter (km)'] = String(phys.diameter)
+      if (phys.albedo) selected.details['SBDB albedo'] = String(phys.albedo)
+      selected.sbdbLoaded = true
+      if (asteroidSelectedId === selected.id) renderAsteroidDetail()
+    }
+  } catch {
+    // Ignore enrichment failure silently.
+  } finally {
+    asteroidDetailEnrichInFlight = false
+  }
+}
+
+async function loadAllAsteroids(force = false) {
+  if (!force && asteroidRecords.length) {
+    el('asteroid-status').textContent = 'Already loaded ' + asteroidRecords.length + ' asteroids.'
+    return
+  }
+
+  const loadBtn = el('asteroid-load-btn')
+  const reloadBtn = el('asteroid-reload-btn')
+  loadBtn.disabled = true
+  reloadBtn.disabled = true
+  el('asteroid-status').textContent = 'Loading asteroid feeds...'
+
+  const results = await Promise.allSettled([
+    fetchCadAsteroids(),
+    fetchSentryAsteroids(),
+    fetchNeoWsAsteroids(),
+    fetchMpcNeocpAsteroids()
+  ])
+  const merged = []
+  const failed = []
+
+  if (results[0].status === 'fulfilled') merged.push(...results[0].value)
+  else failed.push('NASA CAD')
+
+  if (results[1].status === 'fulfilled') merged.push(...results[1].value)
+  else failed.push('NASA Sentry')
+
+  if (results[2].status === 'fulfilled') merged.push(...results[2].value)
+  else failed.push('NASA NeoWs')
+
+  if (results[3].status === 'fulfilled') merged.push(...results[3].value)
+  else failed.push('MPC NEOCP')
+
+  asteroidRecords = merged
+  asteroidSelectedId = null
+
+  renderAsteroidList()
+  renderAsteroidDetail()
+
+  const filteredCount = getFilteredAsteroids().length
+
+  if (failed.length) {
+    el('asteroid-status').textContent = 'Loaded ' + asteroidRecords.length + ' records (' + filteredCount + ' visible). Failed: ' + failed.join(', ')
+  } else {
+    el('asteroid-status').textContent = 'Loaded ' + asteroidRecords.length + ' asteroid records from CAD + Sentry + NeoWs + MPC NEOCP.'
+  }
+
+  loadBtn.disabled = false
+  reloadBtn.disabled = false
+}
+
+function bindAsteroidControls() {
+  const onChange = () => {
+    renderAsteroidList()
+    renderAsteroidDetail()
+    const visible = getFilteredAsteroids().length
+    if (asteroidRecords.length) {
+      el('asteroid-status').textContent = 'Loaded ' + asteroidRecords.length + ' records (' + visible + ' visible).'
+    }
+  }
+
+  el('asteroid-search')?.addEventListener('input', onChange)
+  el('asteroid-source-filter')?.addEventListener('change', onChange)
+  el('asteroid-sort')?.addEventListener('change', onChange)
+}
+
+refresh()
+bindAsteroidControls()
+void loadAllAsteroids()
+</script>
+</body>
+</html>

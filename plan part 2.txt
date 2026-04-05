@@ -1,0 +1,97 @@
+Here's a complete, developer-friendly guide to publicly available data sources for everything you described in your Electron app: fireballs on maps + lists, NEOs/asteroids/hazardous objects/new discoveries (including ATLAS), planetary gravitational “push-pull” effects (for your earthquake-risk algorithm), Moon phases/tides, solar storms/Kp/X-rays, cosmic rays, and magnetic anomalies (South Atlantic Anomaly + northern features) as overlays on OpenStreetMap (OSM) tiles.
+All sources are free, public, no API keys required, return JSON (perfect for Electron + fetch()/axios), and are suitable for real-time polling or background syncing. I prioritized global coverage, low latency, and map-ready formats (lat/lon or easy-to-plot).
+1. Fireballs (Bolides) – List + Map Viewer
+Best source: NASA CNEOS Fireball & Bolide Reports API (U.S. Government sensors + GOES GLM data).
+
+Endpoint: https://ssd-api.jpl.nasa.gov/fireball.api (GET, returns full dataset or filtered).
+Data: Date/time, lat/lon (peak brightness), altitude, velocity, energy (kt TNT), direction. ~1,000+ events (1988–present, updated regularly).
+Formats: JSON (native).
+Map integration: Parse lat/lon → Leaflet/Mapbox markers or GeoJSON layer. Color by energy or date.
+List viewer: Sort by date/energy/location.
+Docs & example: https://ssd-api.jpl.nasa.gov/doc/fireball.html (full dataset in one call).
+Main page: https://cneos.jpl.nasa.gov/fireballs/ (for reference).
+Electron tip: Poll every 5–15 min (data is not ultra-real-time). Combine with quake map for visual correlation.
+
+2. NEOs, Asteroids, Hazardous Objects & New Discoveries (incl. ATLAS)
+Core hub: NASA CNEOS / SSD APIs (one-stop for everything).
+
+Close Approaches (all NEOs near Earth): https://ssd-api.jpl.nasa.gov/doc/cad.html → JSON with date, distance, velocity, object ID.
+Hazardous / Impact Risk (Sentry): https://ssd-api.jpl.nasa.gov/doc/sentry.html → Potential future impacts, probabilities, Torino scale.
+Full NEO catalog & stats: Integrated in the above + https://cneos.jpl.nasa.gov/ (PHAs = Potentially Hazardous Asteroids).
+
+New discoveries (ATLAS survey – this is what you meant by “rubben atlas”):
+
+ATLAS (Asteroid Terrestrial-impact Last Alert System) is the primary real-time discovery engine for NEOs.
+Public access: Forced photometry server + data products (new objects, orbits, light curves).
+Endpoint: Web form + REST API at https://atlas.fallingstar.com/ (documentation on site; large requests → contact them).
+NASA PDS archive: https://pdssbn.astro.umd.edu/data_sb/missions/atlas/index.shtml (bulk downloads).
+New discoveries also flow into Minor Planet Center (MPC) and CNEOS within hours.
+“Rubin” reference: Vera C. Rubin Observatory (LSST) will massively increase discoveries post-2025, but public real-time feeds are not yet available — use ATLAS + CNEOS for now (they already incorporate Rubin-era precursors).
+
+Electron tips:
+
+Use CAD + Sentry for “near Earth objects” list + hazard filter.
+Map: Plot close-approach trajectories or current positions (combine with Horizons below).
+Refresh every hour for new discoveries.
+
+3. Planet Trackers + Gravitational Push/Pull on Earth (for your Earthquake-Risk Algorithm)
+Best source: JPL Horizons System API (gold standard for ephemerides).
+
+Endpoint: https://ssd-api.jpl.nasa.gov/doc/horizons.html (GET or POST).
+What you get: Precise positions (RA/Dec, XYZ, distance, velocity) for Sun, Moon, all planets, at any time (past/future). Geocentric or topocentric.
+Use for algorithm:
+Gravitational force on Earth: F = G * M_planet * M_earth / r² (or vector sum).
+Tidal (push-pull) effect: ∝ M / r³ (strongest for Moon/Sun; Mars close approaches give measurable but tiny values).
+Alignments, syzygies, etc. for “combined stress” on Earth’s crust.
+
+Moon phases & tides: Same API → Moon/Sun distances + angles → compute tidal potential (high/low tides correlate directly with this).
+Docs: https://ssd-api.jpl.nasa.gov/doc/horizons.html + full Horizons at https://ssd.jpl.nasa.gov/horizons/.
+Electron tip: Cache daily ephemerides (one query gives years of data). Feed distances/angles directly into your algo alongside quakes.
+
+4. Solar Storms, Kp Index, X-Rays, Cosmic Rays
+Best source: NOAA Space Weather Prediction Center (SWPC) – real-time JSON feeds.
+
+Kp Index (geomagnetic storms): https://www.swpc.noaa.gov/products/planetary-k-index (3-hourly, JSON available).
+GOES X-ray Flux (solar flares, including “X-rays”): https://www.swpc.noaa.gov/products/goes-x-ray-flux + direct JSON:
+https://services.swpc.noaa.gov/json/goes/primary/xrays-7-day.json (and 1-day, 6-hour variants).
+
+Solar storms / solar wind / proton flux / CMEs: Real-Time Solar Wind, Proton Flux, etc. (all under SWPC products).
+Galactic Cosmic Rays: Available in SWPC phenomena section.
+Full JSON index: https://services.swpc.noaa.gov/json/ (easy to browse).
+Electron tip: Poll every 5–15 min. Use Kp + X-ray flux + solar wind speed as direct inputs to your “Earth danger” algorithm (high Kp + flares = increased seismic risk hypothesis in some studies).
+
+5. Magnetic Anomalies (South America / North) – Satellite-Style View on OpenMaps Tiles
+Best sources:
+
+World Magnetic Model (WMM2025) – NOAA/NCEI official model (updated 2025).
+Download coefficients: https://www.ncei.noaa.gov/products/world-magnetic-model
+Compute magnetic field strength, declination, inclination at any lat/lon/altitude (includes SAA weakening + northern features).
+
+ESA Swarm satellite data → underpins the models; shows South Atlantic Anomaly (SAA) expansion over South America/Africa and related northern anomalies. (Models are derived from Swarm.)
+
+Visualization in Electron (OSM tiles):
+
+Use Leaflet/OpenLayers with OSM base tiles (https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png).
+Overlay: Implement WMM in JS (there are lightweight JS ports or run via WebAssembly) → generate contour lines / heatmap / opacity layer for field intensity.
+SAA appears as a clear low-intensity zone over South America → color it red/orange for “anomaly strength”.
+No live “satellite photo tiles” (magnetic data isn’t optical), but the model is accurate to ~2025–2030 and updates yearly.
+
+Electron tip: Pre-load WMM coefficients, compute on-the-fly or cache a global grid. Refresh model yearly. Perfect for overlaying on your quake/fireball/NEO map.
+Recommendations for Your Earthquake-Risk Algorithm
+Your inputs can now be real, live values:
+
+Celestial: Horizons → distances/angles of Sun/Moon/planets → gravitational/tidal forces.
+Asteroids: CNEOS CAD/Sentry → close approaches + impact probabilities.
+Moon: Horizons → phase + tidal bulge.
+Solar: SWPC Kp + X-ray flux + solar wind.
+Magnetic: WMM model → local anomaly strength (especially SAA over South America).
+
+Implementation order (easiest first):
+
+Fireballs + NEO map (Leaflet + CNEOS JSON).
+Space weather dashboard (SWPC JSON).
+Planet tracker + forces (Horizons).
+Magnetic overlay (WMM).
+Combine all into your custom algo (e.g., weighted score: high Kp + close Mars + SAA weakening + full Moon = higher quake probability flag).
+
+All these APIs are stable, CORS-friendly, and used by thousands of apps. If you want sample Electron/JS code snippets (e.g., fetching fireballs + plotting on Leaflet, or Horizons query for tidal force), just say the word and I’ll give you ready-to-copy functions. This setup will give you a truly unique, data-rich space-weather + seismic risk app!

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Prediction Center</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-page:#f0efe9; --bg-card:#fff; --bg-well:#e8e7e1;
+  --text-1:#1a1a18; --text-2:#6b6b67; --text-3:#9b9b97;
+  --border:rgba(0,0,0,0.10); --border-md:rgba(0,0,0,0.20);
+  --ok:#3b6d11; --danger:#9b1c1c; --r-md:8px; --r-lg:12px;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-mono:'SF Mono','Fira Code','Consolas',monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-page:#181816; --bg-card:#222220; --bg-well:#2c2c29;
+    --text-1:#f0efe9; --text-2:#a0a09a; --text-3:#666662;
+    --border:rgba(255,255,255,0.08); --border-md:rgba(255,255,255,0.16);
+  }
+}
+body { font-family:var(--font); background:var(--bg-page); color:var(--text-1); padding:24px 20px 40px; max-width:960px; margin:0 auto; }
+h1 { font-size:20px; font-weight:600; margin-bottom:4px; }
+.sub { font-size:12px; color:var(--text-3); margin-bottom:18px; }
+.sec { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--text-3); margin-bottom:9px; }
+.btn-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+.btn { font-family:var(--font); font-size:13px; padding:7px 16px; border-radius:var(--r-md); border:.5px solid var(--border-md); background:transparent; color:var(--text-1); cursor:pointer; }
+.btn:hover { background:var(--bg-well); }
+.btn.on { background:var(--bg-well); }
+.card { background:var(--bg-card); border:.5px solid var(--border); border-radius:var(--r-lg); padding:18px 20px; margin-bottom:14px; }
+.score-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+.score-num { font-size:52px; font-weight:600; line-height:1; }
+.score-denom { font-size:20px; color:var(--text-3); }
+.score-right { display:flex; flex-direction:column; align-items:flex-end; gap:7px; }
+.level-pill { font-size:13px; font-weight:600; padding:4px 14px; border-radius:20px; }
+.updated { font-size:11px; color:var(--text-3); }
+.bar-track { height:10px; border-radius:5px; background:var(--bg-well); overflow:hidden; }
+.bar-fill { height:100%; border-radius:5px; width:0%; transition:width .6s; }
+.comp-row { display:flex; align-items:center; gap:12px; padding:7px 0; }
+.comp-row+.comp-row { border-top:.5px solid var(--border); }
+.comp-label { font-size:13px; color:var(--text-2); width:168px; flex-shrink:0; }
+.comp-track { flex:1; height:7px; border-radius:4px; background:var(--bg-well); overflow:hidden; }
+.comp-fill { height:100%; border-radius:4px; width:0%; transition:width .5s; }
+.comp-val { font-size:13px; font-weight:600; width:46px; text-align:right; flex-shrink:0; }
+.comp-wt { font-size:11px; color:var(--text-3); width:30px; text-align:right; flex-shrink:0; }
+.metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+.metric-card { background:var(--bg-card); border:.5px solid var(--border); border-radius:var(--r-md); padding:14px; }
+.m-label { font-size:11px; color:var(--text-3); margin-bottom:5px; }
+.m-value { font-size:20px; font-weight:600; line-height:1.1; margin-bottom:2px; }
+.m-sub { font-size:11px; color:var(--text-3); }
+.source-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:.5px solid var(--border); }
+.source-row:last-child { border-bottom:none; }
+.dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.s-name { font-size:12px; font-weight:600; flex:1; }
+.s-val { font-size:12px; color:var(--text-2); max-width:280px; text-align:right; }
+.pill-live { font-size:10px; padding:2px 8px; border-radius:20px; background:#eaf3de; color:var(--ok); flex-shrink:0; }
+.pill-error { font-size:10px; padding:2px 8px; border-radius:20px; background:#fce4d4; color:var(--danger); flex-shrink:0; }
+.formula { font-size:12px; color:var(--text-2); line-height:1.9; }
+.formula strong { font-size:13px; font-weight:600; color:var(--text-1); display:block; margin-bottom:6px; }
+code { font-family:var(--font-mono); font-size:11px; background:var(--bg-well); color:var(--text-1); padding:2px 6px; border-radius:4px; }
+.hist-row { display:flex; align-items:center; gap:10px; padding:8px 0; font-size:12px; color:var(--text-2); border-bottom:.5px solid var(--border); }
+.hist-row:last-child { border-bottom:none; }
+.hist-time { width:72px; flex-shrink:0; }
+.hist-score { flex:1; font-weight:600; color:var(--text-1); }
+.placeholder { font-size:13px; color:var(--text-3); padding:10px 0; text-align:center; }
+@media (max-width:520px){ .metric-grid{grid-template-columns:repeat(2,1fr);} .comp-label{width:110px;} .comp-wt{display:none;} }
+</style>
+</head>
+<body>
+<h1>Prediction Center</h1>
+<p class="sub">Realtime danger index from NOAA, NASA CNEOS, and orbital calculations.</p>
+<div class="btn-row">
+  <button class="btn" id="refresh-btn" onclick="refresh()">Refresh data</button>
+  <button class="btn" id="auto-btn" onclick="toggleAuto()">Auto-refresh: OFF</button>
+</div>
+<div class="card">
+  <div class="score-top">
+    <div><div class="sec">Earth Danger Index</div><div><span class="score-num" id="total-score">-</span><span class="score-denom"> / 100</span></div></div>
+    <div class="score-right"><span class="level-pill" id="level-pill" style="background:var(--bg-well);color:var(--text-3);">Loading</span><span class="updated" id="updated-time">Waiting for data...</span></div>
+  </div>
+  <div class="bar-track"><div class="bar-fill" id="main-bar"></div></div>
+</div>
+<div class="sec">Component scores (weighted)</div>
+<div class="card" style="padding:10px 20px;">
+  <div class="comp-row"><span class="comp-label">Space weather (Kp)</span><div class="comp-track"><div class="comp-fill" id="bar-kp" style="background:#d85a30;"></div></div><span class="comp-val" id="val-kp">-</span><span class="comp-wt">25%</span></div>
+  <div class="comp-row"><span class="comp-label">Solar X-ray flux</span><div class="comp-track"><div class="comp-fill" id="bar-xray" style="background:#d85a30;"></div></div><span class="comp-val" id="val-xray">-</span><span class="comp-wt">20%</span></div>
+  <div class="comp-row"><span class="comp-label">NEO close approach</span><div class="comp-track"><div class="comp-fill" id="bar-neo" style="background:#ba7517;"></div></div><span class="comp-val" id="val-neo">-</span><span class="comp-wt">20%</span></div>
+  <div class="comp-row"><span class="comp-label">Fireball energy (30d)</span><div class="comp-track"><div class="comp-fill" id="bar-fire" style="background:#ba7517;"></div></div><span class="comp-val" id="val-fire">-</span><span class="comp-wt">10%</span></div>
+  <div class="comp-row"><span class="comp-label">Lunar tidal force</span><div class="comp-track"><div class="comp-fill" id="bar-moon" style="background:#7f77dd;"></div></div><span class="comp-val" id="val-moon">-</span><span class="comp-wt">10%</span></div>
+  <div class="comp-row"><span class="comp-label">Planetary alignment</span><div class="comp-track"><div class="comp-fill" id="bar-planet" style="background:#7f77dd;"></div></div><span class="comp-val" id="val-planet">-</span><span class="comp-wt">10%</span></div>
+  <div class="comp-row"><span class="comp-label">Impact risk (Sentry)</span><div class="comp-track"><div class="comp-fill" id="bar-sentry" style="background:#e24b4a;"></div></div><span class="comp-val" id="val-sentry">-</span><span class="comp-wt">5%</span></div>
+</div>
+<div class="metric-grid">
+  <div class="metric-card"><div class="m-label">Kp index</div><div class="m-value" id="m-kp">-</div><div class="m-sub">Geomagnetic</div></div>
+  <div class="metric-card"><div class="m-label">X-ray class</div><div class="m-value" id="m-xray">-</div><div class="m-sub">GOES satellite</div></div>
+  <div class="metric-card"><div class="m-label">Nearest NEO</div><div class="m-value" id="m-neo">-</div><div class="m-sub">AU from Earth</div></div>
+  <div class="metric-card"><div class="m-label">Moon phase</div><div class="m-value" id="m-moon">-</div><div class="m-sub">Tidal influence</div></div>
+</div>
+<div class="sec">Live data sources</div>
+<div class="card" style="padding:4px 20px;" id="sources-panel"><div class="placeholder">Fetching...</div></div>
+<div class="card formula"><strong>Formula</strong><code>DangerIndex = Sigma(score x weight) / Sigma(weights) x 100</code></div>
+<div class="sec">History (session)</div>
+<div class="card" style="padding:4px 20px;" id="history-panel"><div class="placeholder">No readings yet.</div></div>
+<script>
+function el(id){return document.getElementById(id)}
+function levelInfo(s){if(s>=80)return{label:'CRITICAL',bg:'#f7c1c1',fg:'#791f1f'};if(s>=60)return{label:'HIGH',bg:'#f5c4b3',fg:'#993c1d'};if(s>=40)return{label:'ELEVATED',bg:'#fac775',fg:'#633806'};if(s>=20)return{label:'MODERATE',bg:'#c0dd97',fg:'#27500a'};return{label:'LOW',bg:'#9fe1cb',fg:'#085041'}}
+function barColor(s){if(s>=80)return'#e24b4a';if(s>=60)return'#d85a30';if(s>=40)return'#ba7517';if(s>=20)return'#639922';return'#1d9e75'}
+function setBar(fillId,valId,score){const v=Number.isFinite(score)?Math.max(0,Math.min(100,Math.round(score))):0;el(fillId).style.width=v+'%';el(valId).textContent=v+'%'}
+function safeFixed(v,d=1,f='-'){return Number.isFinite(v)?v.toFixed(d):f}
+const readings=[]
+let autoTimer=null
+async function fetchJson(url,src){const res=await fetch(url);if(!res.ok)throw new Error(src+' HTTP '+res.status);return await res.json()}
+async function getDangerData(){
+  function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v))}
+  async function fKp(){try{const d=await fetchJson('https://services.swpc.noaa.gov/json/planetary_k_index_1m.json','NOAA Kp');const last=d[d.length-1];return{value:parseFloat(last.kp_index??last.Kp??NaN),error:false}}catch{return{value:null,error:true}}}
+  async function fX(){try{const d=await fetchJson('https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json','NOAA Xray');for(let i=d.length-1;i>=0;i--){const f=parseFloat(d[i]['flux_1_0']??d[i].flux??NaN);if(f>0)return{value:f,error:false}}return{value:null,error:true}}catch{return{value:null,error:true}}}
+  async function fN(){try{const t=new Date().toISOString().split('T')[0];const e=new Date(Date.now()+30*86400000).toISOString().split('T')[0];const d=await fetchJson('https://ssd-api.jpl.nasa.gov/cad.api?dist-max=0.5&sort=dist&limit=1&date-min='+t+'&date-max='+e,'NASA CAD');if(Array.isArray(d.data)&&d.data.length){const o=d.data[0];return{name:o[0],distAU:parseFloat(o[4]),error:false}}return{name:null,distAU:null,error:true}}catch{return{name:null,distAU:null,error:true}}}
+  async function fF(){try{const d=await fetchJson('https://ssd-api.jpl.nasa.gov/fireball.api?limit=150','NASA Fireballs');const cut=Date.now()-30*86400000;let maxKt=null,cnt=0;if(Array.isArray(d.data)){for(const ev of d.data){const ts=Date.parse(ev[0]);if(!Number.isFinite(ts)||ts<cut)continue;const en=parseFloat(ev[2]??NaN);if(!Number.isFinite(en))continue;cnt++;if(!Number.isFinite(maxKt)||en>maxKt)maxKt=en}}return{maxKt,count:cnt,error:false}}catch{return{maxKt:null,count:0,error:true}}}
+  async function fS(){try{const d=await fetchJson('https://ssd-api.jpl.nasa.gov/sentry.api','NASA Sentry');let maxProb=null;const rows=Array.isArray(d.data)?d.data:[];for(const obj of rows){const p=parseFloat(obj.ip??obj.prob??NaN);if(!Number.isFinite(p))continue;if(!Number.isFinite(maxProb)||p>maxProb)maxProb=p}return{maxProb,count:rows.length,error:false}}catch{return{maxProb:null,count:null,error:true}}}
+  function sK(k){if(!Number.isFinite(k))return 0;return clamp(Math.round(k/9*100),0,100)}
+  function sX(f){if(!Number.isFinite(f))return 0;if(f>=1e-4)return 100;if(f>=1e-5)return 75;if(f>=1e-6)return 45;if(f>=1e-7)return 20;return 5}
+  function xL(f){if(!Number.isFinite(f))return null;if(f>=1e-4)return'X';if(f>=1e-5)return'M';if(f>=1e-6)return'C';if(f>=1e-7)return'B';return'A'}
+  function sN(d){if(!Number.isFinite(d))return 0;return d>0.5?0:clamp(Math.round((1-d/0.5)*100),0,100)}
+  function sF(e){if(!Number.isFinite(e)||e<=0)return 0;return clamp(Math.round(Math.log10(e+1)/2*100),0,100)}
+  function sM(d){const c=((d%29.53)+29.53)%29.53;const a=c/29.53*2*Math.PI;return Math.round((1-Math.cos(2*a))/2*100)}
+  function sP(j){const P=2*Math.PI,e=P*j/365.25,v=P*j/224.7,ma=P*j/686.97,ju=P*j/4332.59,sa=P*j/10759.22;return Math.round((Math.abs(Math.cos(e-ju))*1+Math.abs(Math.cos(e-sa))*0.6+Math.abs(Math.cos(e-v))*0.5+Math.abs(Math.cos(e-ma))*0.2)/2.3*100)}
+  function sS(p){if(!Number.isFinite(p)||p<=0)return 0;return clamp(Math.round((Math.log10(p)+5)/5*100),0,100)}
+  const W={kp:0.25,xray:0.2,neo:0.2,fireball:0.1,moon:0.1,planets:0.1,sentry:0.05}
+  function w(scores){let sum=0,tw=0;for(const k of Object.keys(W)){sum+=(scores[k]??0)*W[k];tw+=W[k]}return Math.round(sum/tw)}
+  function lvl(s){if(s>=80)return'CRITICAL';if(s>=60)return'HIGH';if(s>=40)return'ELEVATED';if(s>=20)return'MODERATE';return'LOW'}
+  const [kpD,xrD,neoD,fireD,sentryD]=await Promise.all([fKp(),fX(),fN(),fF(),fS()])
+  const J2000=new Date('2000-01-01T12:00:00Z').getTime();const NM=new Date('2024-01-11T11:57:00Z').getTime();const now=Date.now();const dsj=(now-J2000)/86400000;const dsn=(now-NM)/86400000;const cyc=((dsn%29.53)+29.53)%29.53;const phases=['New Moon','Waxing Crescent','First Quarter','Waxing Gibbous','Full Moon','Waning Gibbous','Last Quarter','Waning Crescent'];const phaseName=phases[Math.floor(cyc/29.53*8)%8]
+  const scores={kp:sK(kpD.value),xray:sX(xrD.value),neo:sN(neoD.distAU),fireball:sF(fireD.maxKt),moon:sM(dsn),planets:sP(dsj),sentry:sS(sentryD.maxProb)}
+  const dangerIndex=w(scores)
+  return {dangerIndex,level:lvl(dangerIndex),timestamp:new Date().toISOString(),components:{kp:{score:scores.kp,rawValue:kpD.value,error:kpD.error},xray:{score:scores.xray,rawValue:xrD.value,flareClass:xL(xrD.value),error:xrD.error},neo:{score:scores.neo,distAU:neoD.distAU,name:neoD.name,error:neoD.error},fireball:{score:scores.fireball,maxKt:fireD.maxKt,count30d:fireD.count,error:fireD.error},moon:{score:scores.moon,phaseName,error:false},planets:{score:scores.planets,error:false},sentry:{score:scores.sentry,count:sentryD.count,error:sentryD.error}}}
+}
+function render(r){const c=r.components;const li=levelInfo(r.dangerIndex);const col=barColor(r.dangerIndex);el('total-score').textContent=r.dangerIndex;const lp=el('level-pill');lp.textContent=li.label;lp.style.background=li.bg;lp.style.color=li.fg;el('updated-time').textContent='Updated '+new Date(r.timestamp).toLocaleTimeString();const mb=el('main-bar');mb.style.width=r.dangerIndex+'%';mb.style.background=col;setBar('bar-kp','val-kp',c.kp.score);setBar('bar-xray','val-xray',c.xray.score);setBar('bar-neo','val-neo',c.neo.score);setBar('bar-fire','val-fire',c.fireball.score);setBar('bar-moon','val-moon',c.moon.score);setBar('bar-planet','val-planet',c.planets.score);setBar('bar-sentry','val-sentry',c.sentry.score);el('m-kp').textContent=safeFixed(c.kp.rawValue,1);el('m-xray').textContent=c.xray.flareClass?c.xray.flareClass+'-class':'-';el('m-neo').textContent=Number.isFinite(c.neo.distAU)?c.neo.distAU.toFixed(4)+' AU':'-';el('m-moon').textContent=c.moon.phaseName||'-';const src=[{dot:'#d85a30',name:'NOAA SWPC - Kp index',val:Number.isFinite(c.kp.rawValue)?'Kp '+c.kp.rawValue.toFixed(1):'Unavailable',error:!!c.kp.error},{dot:'#d85a30',name:'NOAA SWPC - X-ray flux',val:Number.isFinite(c.xray.rawValue)?c.xray.flareClass+'-class ('+c.xray.rawValue.toExponential(1)+')':'Unavailable',error:!!c.xray.error},{dot:'#ba7517',name:'NASA CNEOS - close approach',val:Number.isFinite(c.neo.distAU)?(c.neo.name||'Unknown')+' @ '+c.neo.distAU.toFixed(4)+' AU':'Unavailable',error:!!c.neo.error},{dot:'#ba7517',name:'NASA CNEOS - fireballs (30d)',val:Number.isFinite(c.fireball.maxKt)?c.fireball.count30d+' events, max '+c.fireball.maxKt.toFixed(1)+' kt':'Unavailable',error:!!c.fireball.error},{dot:'#e24b4a',name:'NASA Sentry - impact risk',val:Number.isFinite(c.sentry.count)?c.sentry.count+' objects tracked':'Unavailable',error:!!c.sentry.error},{dot:'#7f77dd',name:'Lunar tidal (computed)',val:'Phase: '+(c.moon.phaseName||'-')+' score '+c.moon.score+'%',error:false},{dot:'#7f77dd',name:'Planetary alignment (computed)',val:'Alignment score '+c.planets.score+'%',error:false}];el('sources-panel').innerHTML=src.map(s=>`<div class="source-row"><div class="dot" style="background:${s.dot};"></div><span class="s-name">${s.name}</span><span class="s-val">${s.val}</span><span class="${s.error?'pill-error':'pill-live'}">${s.error?'unavailable':'live'}</span></div>`).join('');readings.unshift({time:new Date(r.timestamp).toLocaleTimeString(),score:r.dangerIndex,lvl:li});if(readings.length>12)readings.pop();el('history-panel').innerHTML=readings.map(h=>`<div class="hist-row"><span class="hist-time">${h.time}</span><span class="hist-score">${h.score} / 100</span><span class="level-pill" style="font-size:11px;padding:2px 10px;background:${h.lvl.bg};color:${h.lvl.fg};">${h.lvl.label}</span></div>`).join('')}
+async function refresh(){el('updated-time').textContent='Fetching...';el('total-score').textContent='-';el('level-pill').textContent='...';el('level-pill').style.background='var(--bg-well)';el('level-pill').style.color='var(--text-3)';try{render(await getDangerData())}catch(err){el('updated-time').textContent='Error: '+err.message}}
+function toggleAuto(){const btn=el('auto-btn');if(autoTimer){clearInterval(autoTimer);autoTimer=null;btn.textContent='Auto-refresh: OFF';btn.classList.remove('on')}else{autoTimer=setInterval(refresh,60000);btn.textContent='Auto-refresh: ON (1 min)';btn.classList.add('on')}}
+refresh()
+</script>
+</body>
+</html>

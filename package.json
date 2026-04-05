@@ -1,0 +1,59 @@
+{
+  "name": "earthquake-viewer-v2",
+  "version": "4.0.0",
+  "description": "Global Earthquake Viewer v4.0 - Real-time seismic data, fireballs, volcanoes, atmosphere, notes, Pan-STARRS Sky Explorer",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "start": "electron .",
+    "build": "vite build",
+    "electron-dev": "concurrently \"vite\" \"wait-on http://localhost:5174 && set VITE_DEV_SERVER_URL=http://localhost:5174&& electron .\"",
+    "preview": "vite preview",
+    "dist:win-unpacked": "npm run build && electron-builder --win --dir"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "electron": "^31.0.0",
+    "concurrently": "^8.0.0",
+    "wait-on": "^7.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "chart.js": "^4.4.0"
+  },
+  "build": {
+    "appId": "com.gwn.earthquakeviewer2",
+    "productName": "GWN - Global Earthquake Viewer v4.0",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "addon",
+        "to": "addon"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "dir"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": null,
+      "uninstallerIcon": null,
+      "installerHeaderIcon": null
+    }
+  }
+}

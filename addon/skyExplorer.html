@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src https://ps1images.stsci.edu https://catalogs.mast.stsci.edu https://mast.stsci.edu; img-src 'self' data: https:; object-src 'none'; base-uri 'self';"/>
+<title>Sky Explorer — Pan-STARRS</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f0efe9;--card:#fff;--well:#e8e7e1;--text:#1a1a18;--muted:#6b6b67;--dim:#9b9b97;--border:rgba(0,0,0,.10);--border-md:rgba(0,0,0,.2);--accent:#4f46e5;--accent-bg:rgba(79,70,229,.08);--accent-border:rgba(79,70,229,.25);--ok:#2b6e48;--danger:#a43d2b;--r:10px;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#181816;--card:#222220;--well:#2c2c29;--text:#f0efe9;--muted:#a0a09a;--dim:#666662;--border:rgba(255,255,255,.08);--border-md:rgba(255,255,255,.16);--accent:#818cf8;--accent-bg:rgba(129,140,248,.1);--accent-border:rgba(129,140,248,.3);--ok:#78d7a0;--danger:#ff947d}}
+body{font-family:var(--font);background:var(--bg);color:var(--text);padding:24px 20px 40px;max-width:1200px;margin:0 auto}
+h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.sub{font-size:12px;color:var(--dim);margin-bottom:16px}
+.card{background:var(--card);border:.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px}
+
+/* Search area */
+.search-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.search-input{flex:1;min-width:220px;padding:9px 14px;border:.5px solid var(--border-md);border-radius:8px;background:var(--card);color:var(--text);font-size:13px}
+.search-input::placeholder{color:var(--dim)}
+.search-btn{padding:9px 18px;border-radius:8px;border:.5px solid var(--accent-border);background:var(--accent-bg);color:var(--accent);font-size:13px;font-weight:700;cursor:pointer;transition:background .15s}
+.search-btn:hover{background:var(--accent-border)}
+.search-btn:disabled{opacity:.5;cursor:wait}
+#search-status{font-size:12px;color:var(--dim);margin-left:4px}
+
+/* Presets */
+.presets{margin-top:10px}
+.presets-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);margin-bottom:7px}
+.preset-grid{display:flex;flex-wrap:wrap;gap:6px}
+.preset-btn{padding:5px 12px;border-radius:999px;border:.5px solid var(--border-md);background:transparent;color:var(--text);font-size:11px;font-weight:600;cursor:pointer;transition:background .12s,border-color .12s}
+.preset-btn:hover{background:var(--well);border-color:var(--accent-border)}
+.preset-btn.active{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent)}
+
+/* Main layout */
+#layout{display:grid;grid-template-columns:340px 1fr;gap:14px;min-height:500px;margin-top:12px}
+
+/* List panel */
+#list-wrap{border:.5px solid var(--border);border-radius:var(--r);background:var(--card);overflow:hidden}
+#list-header{padding:10px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);border-bottom:.5px solid var(--border)}
+#list{list-style:none;max-height:560px;overflow:auto}
+.item{width:100%;text-align:left;border:none;background:transparent;color:var(--text);cursor:pointer;padding:10px 12px;border-bottom:.5px solid var(--border);transition:background .1s}
+.item:hover,.item.active{background:var(--well)}
+.item-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-pos{font-size:11px;color:var(--dim);margin-top:2px;font-variant-numeric:tabular-nums}
+.item-det{font-size:10px;color:var(--muted);margin-top:3px}
+.item-mags{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.item-mag{font-size:10px;padding:2px 6px;border-radius:6px;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* Detail / preview panel */
+#detail-wrap{border:.5px solid var(--border);border-radius:var(--r);background:var(--card);padding:16px;display:flex;flex-direction:column;gap:12px}
+
+/* Image section */
+.img-section{display:flex;flex-direction:column;gap:8px}
+.img-main-wrap{position:relative;width:100%;max-width:480px;aspect-ratio:1/1;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:#0a0f15}
+.img-main{width:100%;height:100%;object-fit:cover;display:block}
+.img-placeholder{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;color:var(--dim);background:var(--well);text-align:center;padding:20px}
+.img-controls{display:flex;align-items:center;gap:10px}
+.img-controls label{font-size:11px;color:var(--dim)}
+.img-controls input[type=range]{flex:1;max-width:200px;accent-color:var(--accent)}
+.img-controls span{font-size:11px;color:var(--muted);min-width:50px}
+
+/* Filter thumbnails */
+.filter-row{display:flex;gap:6px;flex-wrap:wrap}
+.filter-thumb-wrap{display:flex;flex-direction:column;align-items:center;gap:3px}
+.filter-thumb{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:border-color .15s}
+.filter-thumb:hover{border-color:var(--accent)}
+.filter-label{font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase}
+
+/* Object info */
+.detail-title{font-size:18px;font-weight:700}
+.detail-pos{font-size:12px;color:var(--dim);margin-top:2px}
+.info-grid{display:grid;grid-template-columns:180px 1fr;gap:5px 10px;font-size:12px;margin-top:8px}
+.info-k{color:var(--dim)}.info-v{color:var(--text);word-break:break-word}
+
+/* Mag badges (detail) */
+.mag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.mag-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;border:1px solid;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.mag-label{font-weight:800;font-size:10px;text-transform:uppercase;opacity:.8}
+.det-count{font-size:11px;color:var(--dim);margin-top:4px}
+
+/* Links */
+.ext-link{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:.5px solid var(--accent-border);background:var(--accent-bg);color:var(--accent);font-size:12px;font-weight:700;text-decoration:none;cursor:pointer;transition:background .15s}
+.ext-link:hover{background:var(--accent-border)}
+
+/* Empty / loading states */
+.placeholder{display:grid;place-items:center;min-height:200px;font-size:13px;color:var(--dim);text-align:center;padding:20px}
+
+/* Responsive */
+@media(max-width:900px){
+  #layout{grid-template-columns:1fr}
+  #list{max-height:260px}
+  .img-main-wrap{max-width:100%}
+}
+</style>
+</head>
+<body>
+
+<h1>🔭 Sky Explorer — Pan-STARRS</h1>
+<p class="sub">Search the Pan-STARRS DR2 sky survey. Browse 3 billion objects with color imagery across 3/4 of the sky.</p>
+
+<div class="card">
+  <div class="search-row">
+    <input id="search-input" class="search-input" type="text" placeholder="Object name (e.g. Ring Nebula) or RA, Dec (e.g. 210.802, 54.349)" />
+    <button id="search-btn" class="search-btn" onclick="doSearch()">Search</button>
+    <span id="search-status"></span>
+  </div>
+  <div class="presets">
+    <div class="presets-label">Quick presets</div>
+    <div class="preset-grid" id="preset-grid"></div>
+  </div>
+</div>
+
+<div id="layout">
+  <div id="list-wrap">
+    <div id="list-header">Sources (0)</div>
+    <ul id="list"></ul>
+  </div>
+  <div id="detail-wrap">
+    <div class="placeholder" id="detail-placeholder">Search for an object or pick a preset to begin.</div>
+    <div id="detail-content" style="display:none">
+      <!-- Image section -->
+      <div class="img-section">
+        <div class="img-main-wrap" id="img-main-wrap">
+          <img id="img-main" class="img-main" alt="Pan-STARRS color composite" />
+          <div id="img-placeholder" class="img-placeholder">Loading sky image…</div>
+        </div>
+        <div class="img-controls">
+          <label for="size-slider">Cutout size</label>
+          <input id="size-slider" type="range" min="120" max="1200" step="60" value="480" />
+          <span id="size-label">480px · 2′</span>
+        </div>
+      </div>
+
+      <!-- Filter thumbnails -->
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);margin-bottom:6px">Individual Bands</div>
+        <div class="filter-row" id="filter-row"></div>
+      </div>
+
+      <!-- Info -->
+      <div>
+        <div class="detail-title" id="detail-title"></div>
+        <div class="detail-pos" id="detail-pos"></div>
+        <div class="mag-row" id="detail-mags"></div>
+        <div class="det-count" id="detail-det"></div>
+        <div class="info-grid" id="detail-grid"></div>
+      </div>
+
+      <!-- Links -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        <a id="link-cutout" class="ext-link" target="_blank" rel="noopener">🔗 View in PS1 Cutout Service</a>
+        <a id="link-catalog" class="ext-link" target="_blank" rel="noopener">📊 View in MAST Catalog</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---- Helpers ---- */
+function el(id){return document.getElementById(id)}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+const TIMEOUT=15000
+const BANDS=[
+  {key:'gMeanPSFMag',label:'g',color:'#6366f1'},
+  {key:'rMeanPSFMag',label:'r',color:'#22c55e'},
+  {key:'iMeanPSFMag',label:'i',color:'#eab308'},
+  {key:'zMeanPSFMag',label:'z',color:'#f97316'},
+  {key:'yMeanPSFMag',label:'y',color:'#ef4444'}
+]
+
+const PRESETS=[
+  {name:'Andromeda (M31)',ra:10.6847,dec:41.2687},
+  {name:'Orion Nebula (M42)',ra:83.8221,dec:-5.3911},
+  {name:'Crab Nebula (M1)',ra:83.6331,dec:22.0145},
+  {name:'Ring Nebula (M57)',ra:283.3962,dec:33.0289},
+  {name:'Whirlpool (M51)',ra:202.4696,dec:47.1952},
+  {name:'Pleiades (M45)',ra:56.8711,dec:24.1050},
+  {name:'Eagle Nebula (M16)',ra:274.7000,dec:-13.8067},
+  {name:'Sombrero (M104)',ra:189.9976,dec:-11.6231},
+  {name:'Triangulum (M33)',ra:23.4621,dec:30.6602},
+  {name:'Horsehead Nebula',ra:85.2417,dec:-2.4583}
+]
+
+let state={ra:null,dec:null,rows:[],selectedIdx:0,cutoutSize:480,imgCache:{},activePreset:null}
+
+/* ---- Render presets ---- */
+function renderPresets(){
+  el('preset-grid').innerHTML=PRESETS.map((p,i)=>
+    `<button class="preset-btn${state.activePreset===i?' active':''}" data-idx="${i}">${esc(p.name)}</button>`
+  ).join('')
+  el('preset-grid').querySelectorAll('.preset-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const idx=parseInt(btn.dataset.idx)
+      state.activePreset=idx
+      el('search-input').value=PRESETS[idx].name
+      searchByCoords(PRESETS[idx].ra,PRESETS[idx].dec)
+      renderPresets()
+    })
+  })
+}
+renderPresets()
+
+/* ---- Search ---- */
+el('search-input').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch()})
+
+async function doSearch(){
+  const raw=el('search-input').value.trim()
+  if(!raw){setStatus('Enter an object name or coordinates.');return}
+  state.activePreset=null
+  renderPresets()
+
+  // Try parsing as "ra, dec"
+  const coordMatch=raw.match(/^\s*([\d.+-]+)\s*[,\s]+\s*([\d.+-]+)\s*$/)
+  if(coordMatch){
+    const ra=parseFloat(coordMatch[1]),dec=parseFloat(coordMatch[2])
+    if(Number.isFinite(ra)&&Number.isFinite(dec)){
+      searchByCoords(ra,dec)
+      return
+    }
+  }
+  // Resolve name via MAST
+  await resolveAndSearch(raw)
+}
+
+async function resolveAndSearch(name){
+  setStatus('Resolving "'+name+'"…')
+  disableSearch(true)
+  try{
+    const ctrl=new AbortController();const tid=setTimeout(()=>ctrl.abort(),TIMEOUT)
+    const r=await fetch('https://mast.stsci.edu/api/v0/invoke',{
+      method:'POST',signal:ctrl.signal,
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:'request='+encodeURIComponent(JSON.stringify({service:'Mast.Name.Lookup',params:{input:name,format:'json'}}))
+    })
+    clearTimeout(tid)
+    const d=await r.json()
+    const results=d?.resolvedCoordinate
+    if(!Array.isArray(results)||!results.length){setStatus('Could not resolve "'+name+'". Try coordinates instead.','error');disableSearch(false);return}
+    const ra=parseFloat(results[0].ra),dec=parseFloat(results[0].decl)
+    if(!Number.isFinite(ra)||!Number.isFinite(dec)){setStatus('Invalid coordinates from resolver.','error');disableSearch(false);return}
+    searchByCoords(ra,dec)
+  }catch(err){
+    setStatus('Resolver error: '+(err?.message||'unknown'),'error')
+  }finally{disableSearch(false)}
+}
+
+async function searchByCoords(ra,dec){
+  state.ra=ra;state.dec=dec;state.selectedIdx=0
+  if(dec<-30){
+    setStatus('Dec '+dec.toFixed(4)+'° is outside Pan-STARRS footprint (dec > -30° only).','error')
+    state.rows=[];renderList();showPlaceholder('This position is below the Pan-STARRS survey footprint (dec must be > -30°).')
+    disableSearch(false)
+    return
+  }
+  setStatus('Searching RA '+ra.toFixed(4)+'° Dec '+dec.toFixed(4)+'°…')
+  disableSearch(true)
+  try{
+    const ctrl=new AbortController();const tid=setTimeout(()=>ctrl.abort(),TIMEOUT)
+    const url='https://catalogs.mast.stsci.edu/api/v0.1/panstarrs/dr2/mean.json?ra='+ra+'&dec='+dec+'&radius=0.05&nDetections.gte=2&pagesize=100&columns=[objName,raMean,decMean,nDetections,ng,nr,ni,nz,ny,gMeanPSFMag,rMeanPSFMag,iMeanPSFMag,zMeanPSFMag,yMeanPSFMag]&sort_by=distance.asc'
+    const r=await fetch(url,{signal:ctrl.signal})
+    clearTimeout(tid)
+    if(!r.ok)throw new Error('HTTP '+r.status)
+    const d=await r.json()
+    const cols=d?.info?.map(c=>c.column_name)||[]
+    state.rows=(d?.data||[]).map(row=>{const o={};cols.forEach((k,i)=>{o[k]=row[i]===-999||row[i]===-999.0?null:row[i]});return o})
+    setStatus(state.rows.length+' source'+(state.rows.length!==1?'s':'')+' found near RA '+ra.toFixed(4)+'° Dec '+dec.toFixed(4)+'°','ok')
+    renderList()
+    if(state.rows.length>0){state.selectedIdx=0;renderDetail()}
+    else showPlaceholder('No Pan-STARRS sources found within 3 arcmin of this position.')
+  }catch(err){
+    setStatus('Search failed: '+(err?.message||'unknown'),'error')
+    state.rows=[];renderList();showPlaceholder('Search failed. Check your connection and try again.')
+  }finally{disableSearch(false)}
+}
+
+/* ---- List ---- */
+function renderList(){
+  el('list-header').textContent='Sources ('+state.rows.length+')'
+  if(!state.rows.length){el('list').innerHTML='<li class="placeholder" style="min-height:100px">No results</li>';return}
+  el('list').innerHTML=state.rows.map((obj,i)=>{
+    const name=obj.objName||'PSO J'+pf(obj.raMean)+'+'+pf(obj.decMean)
+    const mags=BANDS.map(b=>{
+      const v=obj[b.key];const ok=v!=null&&v>-99
+      return ok?`<span class="item-mag" style="background:${b.color}18;color:${b.color};border:1px solid ${b.color}35">${b.label} ${parseFloat(v).toFixed(1)}</span>`:''
+    }).join('')
+    return `<li><button class="item${i===state.selectedIdx?' active':''}" data-idx="${i}">
+      <div class="item-name">${esc(name)}</div>
+      <div class="item-pos">RA ${pf(obj.raMean)}° Dec ${pf(obj.decMean)}°</div>
+      <div class="item-det">${obj.nDetections||0} detections</div>
+      <div class="item-mags">${mags}</div>
+    </button></li>`
+  }).join('')
+  el('list').querySelectorAll('.item').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      state.selectedIdx=parseInt(btn.dataset.idx)
+      renderList()
+      renderDetail()
+    })
+  })
+}
+
+/* ---- Detail ---- */
+async function renderDetail(){
+  const obj=state.rows[state.selectedIdx]
+  if(!obj){showPlaceholder('Select a source from the list.');return}
+  el('detail-placeholder').style.display='none'
+  el('detail-content').style.display=''
+
+  const ra=parseFloat(obj.raMean),dec=parseFloat(obj.decMean)
+  const name=obj.objName||'PSO J'+pf(ra)+'+'+pf(dec)
+
+  el('detail-title').textContent=name
+  el('detail-pos').textContent='RA '+ra.toFixed(6)+'° · Dec '+dec.toFixed(6)+'°'
+
+  // Magnitudes
+  el('detail-mags').innerHTML=BANDS.map(b=>{
+    const v=obj[b.key];const display=v!=null&&v>-99?parseFloat(v).toFixed(2):'—'
+    return `<span class="mag-badge" style="border-color:${b.color}40;background:${b.color}18;color:${b.color}"><span class="mag-label">${b.label}</span>${display}</span>`
+  }).join('')
+  el('detail-det').textContent=(obj.nDetections||'?')+' total detections (g:'+nn(obj.ng)+' r:'+nn(obj.nr)+' i:'+nn(obj.ni)+' z:'+nn(obj.nz)+' y:'+nn(obj.ny)+')'
+
+  // Info grid
+  const pairs=[
+    ['PS1 Name',name],
+    ['RA (mean)',ra.toFixed(6)+'°'],
+    ['Dec (mean)',dec.toFixed(6)+'°'],
+    ['Total detections',String(obj.nDetections||'?')]
+  ]
+  BANDS.forEach(b=>{const v=obj[b.key];pairs.push([b.label+'-band PSF mag',v!=null&&v>-99?parseFloat(v).toFixed(3):'—'])})
+  el('detail-grid').innerHTML=pairs.map(([k,v])=>`<div class="info-k">${esc(k)}</div><div class="info-v">${esc(v)}</div>`).join('')
+
+  // External links
+  el('link-cutout').href='https://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos='+ra+'+'+dec+'&filter=color'
+  el('link-catalog').href='https://catalogs.mast.stsci.edu/?ra='+ra+'&dec='+dec+'&radius=0.05&mission=panstarrs'
+
+  // Load images
+  await loadImages(ra,dec)
+}
+
+/* ---- Images ---- */
+async function loadImages(ra,dec){
+  const size=state.cutoutSize
+  const imgEl=el('img-main'),ph=el('img-placeholder')
+  imgEl.style.display='none';ph.style.display='';ph.textContent='Loading sky image…'
+  el('filter-row').innerHTML='<span style="font-size:11px;color:var(--dim)">Loading bands…</span>'
+
+  // Fetch filenames
+  let files={}
+  try{
+    const key=ra.toFixed(5)+'_'+dec.toFixed(5)
+    if(state.imgCache[key]){files=state.imgCache[key]}
+    else{
+      const ctrl=new AbortController();const tid=setTimeout(()=>ctrl.abort(),TIMEOUT)
+      const r=await fetch('https://ps1images.stsci.edu/cgi-bin/ps1filenames.py?ra='+ra+'&dec='+dec+'&filters=grizy&type=stack&sep=,',{signal:ctrl.signal})
+      clearTimeout(tid)
+      const text=await r.text()
+      const lines=text.trim().split('\n').slice(1)
+      for(const line of lines){const c=line.split(',');if(c.length>=8)files[c[4]?.trim()]=c[7]?.trim()}
+      state.imgCache[key]=files
+    }
+  }catch(err){
+    ph.textContent='Could not load images: '+(err?.message||'unknown')
+    el('filter-row').innerHTML=''
+    return
+  }
+
+  // Build color composite URL
+  if(files.r||files.g||files.i){
+    const params=['ra='+ra,'dec='+dec,'size='+size,'format=jpg']
+    if(files.i)params.push('red='+encodeURIComponent(files.i))
+    if(files.r)params.push('green='+encodeURIComponent(files.r))
+    if(files.g)params.push('blue='+encodeURIComponent(files.g))
+    const url='https://ps1images.stsci.edu/cgi-bin/fitscut.cgi?'+params.join('&')
+    imgEl.src=url
+    imgEl.onload=()=>{imgEl.style.display='';ph.style.display='none'}
+    imgEl.onerror=()=>{ph.textContent='Color image unavailable';imgEl.style.display='none';ph.style.display=''}
+  }else{
+    ph.textContent='No images available at this position'
+  }
+
+  // Individual filter thumbnails
+  const filterLetters=['g','r','i','z','y']
+  const filterColors={g:'#6366f1',r:'#22c55e',i:'#eab308',z:'#f97316',y:'#ef4444'}
+  el('filter-row').innerHTML=filterLetters.map(f=>{
+    if(!files[f])return ''
+    const url='https://ps1images.stsci.edu/cgi-bin/fitscut.cgi?ra='+ra+'&dec='+dec+'&size='+Math.min(size,480)+'&format=jpg&red='+encodeURIComponent(files[f])
+    return `<div class="filter-thumb-wrap">
+      <img class="filter-thumb" src="${url}" alt="${f}-band" onerror="this.style.display='none'" />
+      <span class="filter-label" style="color:${filterColors[f]}">${f}</span>
+    </div>`
+  }).join('')||'<span style="font-size:11px;color:var(--dim)">No individual band images</span>'
+}
+
+/* Size slider */
+el('size-slider').addEventListener('input',function(){
+  state.cutoutSize=parseInt(this.value)
+  const arcmin=(state.cutoutSize*0.25/60).toFixed(1)
+  el('size-label').textContent=state.cutoutSize+'px · '+arcmin+"'"
+})
+el('size-slider').addEventListener('change',function(){
+  state.cutoutSize=parseInt(this.value)
+  const obj=state.rows[state.selectedIdx]
+  if(obj)loadImages(parseFloat(obj.raMean),parseFloat(obj.decMean))
+})
+
+/* ---- Utility ---- */
+function pf(v){return v!=null?parseFloat(v).toFixed(4):'?'}
+function nn(v){return v!=null?v:'0'}
+function setStatus(msg,kind){const s=el('search-status');s.textContent=msg;s.className=kind||''}
+function disableSearch(d){el('search-btn').disabled=d;el('search-input').disabled=d}
+function showPlaceholder(msg){el('detail-placeholder').style.display='';el('detail-placeholder').textContent=msg;el('detail-content').style.display='none'}
+</script>
+</body>
+</html>
