@@ -58,6 +58,9 @@ Or, use the portable (unpacked) version from the `win-unpacked` folder for a no-
 
 ## Changelog
 
+### v5.1.0 — Minor update
+-Logos where missing
+
 ### v5.0.0 — Major Update
 - App renamed to **GWN - Global Earth Monitor 5.0**
 - UI/UX improvements and new branding
