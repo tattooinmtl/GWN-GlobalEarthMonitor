@@ -1,4 +1,4 @@
-# 🌍 GWN - Global Earth Monitor 5.0
+# 🌍 GWN - Global Earth Monitor 5.1.0
 
 A real-time global monitoring desktop application for earthquakes, fireballs, asteroids, volcanoes, atmosphere, and more. Built with Electron, GWN - Global Earth Monitor 5.0 brings together advanced data visualization, live feeds, and scientific tools in a single, modern interface.
 
@@ -59,7 +59,7 @@ Or, use the portable (unpacked) version from the `win-unpacked` folder for a no-
 ## Changelog
 
 ### v5.1.0 — Minor update
--Logos where missing
+- UI/UX Logos missing
 
 ### v5.0.0 — Major Update
 - App renamed to **GWN - Global Earth Monitor 5.0**
