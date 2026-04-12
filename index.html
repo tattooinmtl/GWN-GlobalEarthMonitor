@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' data: blob: https:; connect-src 'self' https://earthquake.usgs.gov https://service.earthscope.org https://*.basemaps.cartocdn.com https://service.ncedc.org https://service.scedc.caltech.edu https://geofon.gfz-potsdam.de https://eida.ethz.ch https://ws.ipgp.fr https://www.orfeus-eu.org https://eida.bgr.de https://www.earthquakescanada.nrcan.gc.ca https://www.fnet.bosai.go.jp https://webservices.ingv.it https://ws.resif.fr https://service.geonet.org.nz https://www.seismicportal.eu https://www.jma.go.jp https://www.isc.ac.uk https://geocoding-api.open-meteo.com https://ssd-api.jpl.nasa.gov https://services.swpc.noaa.gov https://api.nasa.gov https://www.minorplanetcenter.net https://data.gsras.ru https://gibs.earthdata.nasa.gov https://tile.openweathermap.org https://api.openweathermap.org https://www.airnowapi.org https://ipapi.co https://volcanoes.usgs.gov https://volcano.si.edu https://raw.githubusercontent.com https://fonts.gstatic.com https://ps1images.stsci.edu https://catalogs.mast.stsci.edu https://mast.stsci.edu; font-src 'self' data: https:; worker-src 'self' blob:; child-src 'self' blob: https:; object-src 'none'; base-uri 'self'; frame-src 'self' blob:; frame-ancestors 'none';" />
-  <title>Global Earthquake Viewer v4.0</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' data: blob: https:; connect-src 'self' https://earthquake.usgs.gov https://service.earthscope.org https://*.basemaps.cartocdn.com https://service.ncedc.org https://service.scedc.caltech.edu https://geofon.gfz-potsdam.de https://eida.ethz.ch https://ws.ipgp.fr https://www.orfeus-eu.org https://eida.bgr.de https://www.earthquakescanada.nrcan.gc.ca https://www.fnet.bosai.go.jp https://webservices.ingv.it https://ws.resif.fr https://service.geonet.org.nz https://www.seismicportal.eu https://www.jma.go.jp https://www.isc.ac.uk https://geocoding-api.open-meteo.com https://ssd-api.jpl.nasa.gov https://services.swpc.noaa.gov https://api.nasa.gov https://www.minorplanetcenter.net https://data.gsras.ru https://gibs.earthdata.nasa.gov https://tile.openweathermap.org https://api.openweathermap.org https://www.airnowapi.org https://ipapi.co https://volcanoes.usgs.gov https://volcano.si.edu https://raw.githubusercontent.com https://fonts.gstatic.com https://ps1images.stsci.edu https://catalogs.mast.stsci.edu https://mast.stsci.edu https://kauai.ccmc.gsfc.nasa.gov; font-src 'self' data: https:; worker-src 'self' blob:; child-src 'self' blob: https:; object-src 'none'; base-uri 'self'; frame-src 'self' blob:; frame-ancestors 'none';" />
+  <title>GWN - Global Earth Monitor</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="/src/style.css" />
 </head>
@@ -13,7 +13,10 @@
     <!-- Sidebar -->
     <aside id="sidebar">
       <div id="sidebar-header">
-        <h1>🌍 GWN - Global Earthquake Viewer V4.0</h1>
+        <div id="sidebar-brand">
+          <img id="sidebar-logo" src="LogoDark.png" alt="GWN" class="sidebar-logo" />
+          <h1>GWN - Global Earth Monitor</h1>
+        </div>
         <div id="live-event-banner">
           <span id="live-event-dot"></span>
           <span id="live-event-text">Waiting for data…</span>
@@ -79,6 +82,7 @@
           <button type="button" class="tab-btn" data-tab="stations">Stations</button>
           <button type="button" class="tab-btn" data-tab="notes">Notes</button>
           <button type="button" class="tab-btn" data-tab="stats">Stats</button>
+          <button type="button" class="tab-btn tab-btn-settings" data-tab="settings">⚙ Settings</button>
         </div>
       </div>
 
@@ -264,7 +268,7 @@
               <label class="atmo-layer-toggle"><input type="checkbox" data-layer="temp"> Temperature</label>
             </div>
             <div class="atmo-layer-group">
-              <div class="atmo-group-label">Atmospheric Science</div>
+              <div class="atmo-group-label">Atmospheric Science <span style="font-size:10px;font-weight:400;opacity:0.55">(Press Play)</span></div>
               <label class="atmo-layer-toggle"><input type="checkbox" data-layer="so2"> SO&#8322; Index</label>
               <label class="atmo-layer-toggle"><input type="checkbox" data-layer="aerosol"> UV Aerosol Index</label>
               <label class="atmo-layer-toggle"><input type="checkbox" data-layer="fires"> Thermal Anomalies</label>
@@ -275,6 +279,13 @@
               <div id="atmo-kp-badge" class="atmo-space-badge">Kp: —</div>
               <div id="atmo-xray-badge" class="atmo-space-badge">X-ray: —</div>
               <div id="atmo-solar-wind-badge" class="atmo-space-badge">Solar Wind: — km/s</div>
+            </div>
+            <div class="atmo-layer-group">
+              <div class="atmo-group-label">Aurora Forecast</div>
+              <div id="atmo-aurora-status" class="atmo-space-badge">Aurora: Loading…</div>
+              <div id="atmo-aurora-max-prob" class="atmo-space-badge">Max Probability: —</div>
+              <div id="atmo-gst-latest" class="atmo-space-badge">Last Storm: —</div>
+              <div class="side-controls-note">Live NOAA OVATION aurora model shown on the Space Weather map below. DONKI geomagnetic storm data from NASA CCMC.</div>
             </div>
             <div class="atmo-layer-group">
               <div class="atmo-group-label">Time Playback (NASA layers)</div>
@@ -336,6 +347,43 @@
             </select>
             <button class="notes-btn notes-btn-danger" id="notes-erase-btn" type="button">Erase</button>
             <span id="notes-status" class="notes-status"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div id="tab-settings" class="tab-panel">
+        <div class="side-controls-panel">
+          <div class="side-controls-title">Settings</div>
+          <div class="side-controls-stack">
+            <div class="settings-group">
+              <label class="settings-label" for="theme-select">Theme</label>
+              <select id="theme-select">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+            </div>
+            <div class="settings-group">
+              <div class="settings-label">API Keys</div>
+              <label class="settings-key-label" for="settings-owm-key">OpenWeatherMap</label>
+              <input id="settings-owm-key" type="text" class="settings-key-input" placeholder="OWM API Key" />
+              <label class="settings-key-label" for="settings-airnow-key">AirNow</label>
+              <input id="settings-airnow-key" type="text" class="settings-key-input" placeholder="AirNow API Key" />
+              <label class="settings-key-label" for="settings-nasa-key">NASA</label>
+              <input id="settings-nasa-key" type="text" class="settings-key-input" placeholder="NASA API Key" />
+              <button id="settings-save-keys" class="settings-save-btn" type="button">Save API Keys</button>
+            </div>
+            <div class="settings-group">
+              <div class="settings-label">About</div>
+              <div class="settings-about">
+                <img id="settings-logo" src="LogoDark.png" alt="GWN" class="settings-logo" />
+                <div class="settings-about-text">
+                  <strong>GWN - Global Earth Monitor</strong>
+                  <span>Version 5.0</span>
+                  <span class="settings-copyright">© 2026 GWN - Erik Boivin</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

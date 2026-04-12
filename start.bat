@@ -30,7 +30,12 @@ if errorlevel 1 (
 
 echo [INFO] Starting Electron app...
 call npm start
-if errorlevel 1 (
+set ELECTRON_ERR=%ERRORLEVEL%
+
+:: --- Finally: always kill lingering Node processes silently on close ---
+taskkill /F /IM node.exe >nul 2>&1
+
+if %ELECTRON_ERR% neq 0 (
   echo [ERROR] App exited with errors.
   pause
   exit /b 1

@@ -362,7 +362,8 @@ export function createAsteroidSourceLoaders({ fetchJsonWithTimeout, fetchNeoWsFe
   async function fetchCometSbdb() {
     const data = await fetchJsonWithTimeout(
       'https://ssd-api.jpl.nasa.gov/sbdb_query.api?fields=full_name,pdes,name,prefix,e,a,q,i,om,w,tp_cal,per_y,epoch_cal,H&sb-kind=c',
-      'JPL Comets'
+      'JPL Comets',
+      45000
     )
     const rawRows = Array.isArray(data?.data) ? data.data : []
 

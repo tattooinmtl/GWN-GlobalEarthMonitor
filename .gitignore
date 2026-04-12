@@ -5,3 +5,5 @@ release/
 *.blockmap
 .env
 .env.*
+session.ghx
+docs/

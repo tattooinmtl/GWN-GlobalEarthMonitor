@@ -22,5 +22,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   deleteNote: (folder, name) => ipcRenderer.invoke('note:delete', folder, name),
   showSavePrompt: () => ipcRenderer.invoke('dialog:unsaved'),
   onBeforeQuit: cb => ipcRenderer.on('app-before-quit', cb),
-  confirmQuit: () => ipcRenderer.send('quit-confirmed')
+  confirmQuit: () => ipcRenderer.send('quit-confirmed'),
+  notifyThemeChange: theme => ipcRenderer.send('theme-changed', theme),
+  onNavigateTab: cb => ipcRenderer.on('navigate-tab', (_event, tab) => cb(tab))
 })

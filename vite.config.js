@@ -28,8 +28,18 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true
   },
+  optimizeDeps: {
+    include: ['three', 'three/addons/controls/OrbitControls.js']
+  },
   server: {
-    port: 5174
+    port: 5174,
+    strictPort: true,
+    fs: {
+      strict: false
+    },
+    hmr: {
+      overlay: false
+    }
   },
   plugins: [copyDirPlugin('addon', 'addon')]
 })

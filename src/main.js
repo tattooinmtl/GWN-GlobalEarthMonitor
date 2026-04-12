@@ -22,8 +22,8 @@ const JAPAN_EVENT_URL = 'https://www.jma.go.jp/bosai/quake/data/list.json'
 const ITALY_EVENT_URL = 'https://webservices.ingv.it/fdsnws/event/1/query'
 const GEOFON_EVENT_URL = 'https://geofon.gfz-potsdam.de/fdsnws/event/1/query'
 const GSRAS_EVENT_URL = 'https://data.gsras.ru/fdsnws/event/1/query'
-const OWM_API_KEY = import.meta.env.VITE_OWM_API_KEY || ''
-const AIRNOW_API_KEY = import.meta.env.VITE_AIRNOW_API_KEY || ''
+let OWM_API_KEY = import.meta.env.VITE_OWM_API_KEY || '5722d9ad7a02380c082302d4fb62905e'
+let AIRNOW_API_KEY = import.meta.env.VITE_AIRNOW_API_KEY || '20DA2C46-44A2-4054-872B-1F28A8CC35D1'
 const EARTHQUAKE_REGIONS = {
   global: { label: 'Global' },
   canada: { label: 'Canada', latMin: 41, latMax: 84, lonMin: -141, lonMax: -52 },
@@ -2292,7 +2292,7 @@ function predictionSafeFixed(value, digits = 1, fallback = '-') {
   return Number.isFinite(value) ? value.toFixed(digits) : fallback
 }
 
-const NASA_NEOWS_PRIMARY_API_KEY = import.meta.env.VITE_NASA_API_KEY || 'DEMO_KEY'
+let NASA_NEOWS_PRIMARY_API_KEY = import.meta.env.VITE_NASA_API_KEY || 'dhAW7YN0FhjazKlxUM6rCqhquUXgaY9k6WGuObuw'
 const NASA_NEOWS_FALLBACK_API_KEY = 'DEMO_KEY'
 
 function buildNeoWsFeedUrl(startDate, endDate, apiKey) {
@@ -2319,6 +2319,7 @@ async function fetchJsonWithTimeout(url, source, timeoutMs = REQUEST_TIMEOUT_MS)
     }
     return await response.json()
   } catch (error) {
+    console.error(`[FETCH-DEBUG] ${source} (${url}) failed:`, error?.name, error?.message, error)
     if (error?.name === 'AbortError') {
       throw new Error(`${source} timeout`)
     }
@@ -3203,7 +3204,7 @@ function activateTab(tabName) {
   })
   syncSidebarHeader(tabName)
 
-  const sidebarTabs = new Set(['earthquakes', 'fireballs', 'asteroids', 'prediction', 'stations', 'notes', 'stats', 'volcanoes', '3dsim', 'skyexplorer', 'atmosphere'])
+  const sidebarTabs = new Set(['earthquakes', 'fireballs', 'asteroids', 'prediction', 'stations', 'notes', 'stats', 'volcanoes', '3dsim', 'skyexplorer', 'atmosphere', 'settings'])
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.toggle('active', sidebarTabs.has(tabName) && panel.id === `tab-${tabName}`)
   })
@@ -3251,6 +3252,12 @@ function activateTab(tabName) {
   if (tabName === 'notes') {
     hideMainOverlays()
     showMainView('notes')
+    return
+  }
+
+  if (tabName === 'settings') {
+    hideMainOverlays()
+    showMapSurface()
     return
   }
 
@@ -3785,6 +3792,7 @@ function initAtmosphereMaps() {
   // Load space weather once
   void loadSpaceWeather()
   void loadAuroraOverlay()
+  void loadDonkiGST()
 }
 
 function buildGibsLayer(layerName, dayOffset) {
@@ -3951,20 +3959,25 @@ async function loadAuroraOverlay() {
     if (!atmoSpaceMap || !data?.coordinates) return
     if (atmoAuroraLayer) atmoSpaceMap.removeLayer(atmoAuroraLayer)
 
-    // NOAA Aurora is a flat 2D grid: [[lon, lat, aurora_probability], ...]
     const coords = Array.isArray(data.coordinates) ? data.coordinates : []
     if (!coords.length) return
-    // Render as small colored rectangles using a canvas or just L.circleMarker sampling every Nth point
+
     const layer = L.layerGroup()
-    const step = 4  // sample every 4th point to avoid thousands of markers
+    let maxProb = 0
+    const step = 3
     for (let i = 0; i < coords.length; i += step) {
       const [lon, lat, prob] = coords[i]
-      if (!prob || prob < 5) continue
-      const alpha = Math.min(0.8, prob / 100)
-      const hue = 120  // green aurora
-      const circle = L.circleMarker([lat, lon], {
-        radius: 3,
-        fillColor: `hsla(${hue}, 100%, 60%, ${alpha})`,
+      if (!prob || prob < 3) continue
+      if (prob > maxProb) maxProb = prob
+      const normLon = lon > 180 ? lon - 360 : lon
+      const alpha = Math.min(0.85, prob / 80)
+      // Green to blue-violet gradient based on intensity
+      const hue = prob > 40 ? 280 : prob > 20 ? 160 : 120
+      const lightness = prob > 40 ? 70 : 60
+      const radius = prob > 50 ? 5 : prob > 20 ? 4 : 3
+      const circle = L.circleMarker([lat, normLon], {
+        radius,
+        fillColor: `hsla(${hue}, 100%, ${lightness}%, ${alpha})`,
         fillOpacity: alpha,
         stroke: false
       })
@@ -3972,8 +3985,57 @@ async function loadAuroraOverlay() {
     }
     atmoAuroraLayer = layer
     atmoSpaceMap.addLayer(layer)
+
+    // Update sidebar aurora info
+    const statusEl = document.getElementById('atmo-aurora-status')
+    const maxProbEl = document.getElementById('atmo-aurora-max-prob')
+    if (maxProbEl) maxProbEl.textContent = `Max Probability: ${maxProb}%`
+    if (statusEl) {
+      const level = maxProb >= 50 ? 'Strong' : maxProb >= 20 ? 'Moderate' : maxProb >= 5 ? 'Minor' : 'Quiet'
+      statusEl.textContent = `Aurora: ${level}`
+      statusEl.style.color = maxProb >= 50 ? '#f85149' : maxProb >= 20 ? '#d29922' : maxProb >= 5 ? '#3fb950' : ''
+    }
+
+    // Also show observation time if available
+    if (data['Observation Time']) {
+      const obsEl = document.getElementById('atmo-aurora-status')
+      if (obsEl) obsEl.title = `Observation: ${data['Observation Time']}`
+    }
   } catch {
-    // Aurora data unavailable
+    const el = document.getElementById('atmo-aurora-status')
+    if (el) el.textContent = 'Aurora: Unavailable'
+  }
+}
+
+async function loadDonkiGST() {
+  try {
+    const end = new Date()
+    const start = new Date()
+    start.setDate(start.getDate() - 30)
+    const fmt = d => d.toISOString().slice(0, 10)
+    const url = `https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/GST?startDate=${fmt(start)}&endDate=${fmt(end)}`
+    const data = await fetchParsedWithRetry({
+      url, parse: 'json', sourceLabel: 'DONKI-GST', timeoutMs: 10000
+    })
+    const el = document.getElementById('atmo-gst-latest')
+    if (!el) return
+    if (!Array.isArray(data) || !data.length) {
+      el.textContent = 'Last Storm: None (30d)'
+      return
+    }
+    const latest = data[data.length - 1]
+    const kpList = latest.allKpIndex || []
+    const maxKp = kpList.reduce((mx, k) => {
+      const val = Number(k.kpIndex ?? k.KpIndex ?? 0)
+      return val > mx ? val : mx
+    }, 0)
+    const stormDate = latest.startTime ? new Date(latest.startTime).toLocaleDateString() : '?'
+    const gLevel = maxKp >= 9 ? 'G5 Extreme' : maxKp >= 8 ? 'G4 Severe' : maxKp >= 7 ? 'G3 Strong' : maxKp >= 6 ? 'G2 Moderate' : maxKp >= 5 ? 'G1 Minor' : `Kp ${maxKp}`
+    el.textContent = `Last Storm: ${gLevel} (${stormDate})`
+    el.style.color = maxKp >= 7 ? '#f85149' : maxKp >= 5 ? '#d29922' : ''
+  } catch {
+    const el = document.getElementById('atmo-gst-latest')
+    if (el) el.textContent = 'Last Storm: Unavailable'
   }
 }
 
@@ -4077,3 +4139,81 @@ window.electronAPI?.onBeforeQuit(async () => {
     window.electronAPI.confirmQuit()
   }
 })
+
+// =============================================
+// THEME SYSTEM
+// =============================================
+function applyTheme(theme) {
+  const isDark = theme !== 'light'
+  document.documentElement.classList.toggle('light', !isDark)
+
+  // Update logos
+  const logoSrc = isDark ? 'LogoDark.png' : 'LogoLight.png'
+  const sidebarLogo = document.getElementById('sidebar-logo')
+  const settingsLogo = document.getElementById('settings-logo')
+  if (sidebarLogo) sidebarLogo.src = logoSrc
+  if (settingsLogo) settingsLogo.src = logoSrc
+
+  // Leaflet tile brightness
+  const tilePane = document.querySelector('.leaflet-tile-pane')
+  if (tilePane) {
+    tilePane.style.filter = isDark ? 'brightness(0.7) saturate(0.8)' : 'brightness(1) saturate(1)'
+  }
+
+  // Notify Electron main process (tray icon, etc.)
+  window.electronAPI?.notifyThemeChange?.(theme)
+  // Persist
+  window.electronAPI?.saveState?.('theme', theme)
+}
+
+// Theme selector
+const themeSelect = document.getElementById('theme-select')
+if (themeSelect) {
+  // Restore saved theme
+  window.electronAPI?.loadState?.('theme').then(saved => {
+    const theme = saved === 'light' ? 'light' : 'dark'
+    themeSelect.value = theme
+    applyTheme(theme)
+  }).catch(() => {})
+
+  themeSelect.addEventListener('change', () => {
+    applyTheme(themeSelect.value)
+  })
+}
+
+// Tray icon navigation
+window.electronAPI?.onNavigateTab?.(tab => {
+  if (tab) activateTab(tab)
+})
+
+// =============================================
+// API KEY SETTINGS
+// =============================================
+const owmKeyInput = document.getElementById('settings-owm-key')
+const airnowKeyInput = document.getElementById('settings-airnow-key')
+const nasaKeyInput = document.getElementById('settings-nasa-key')
+const saveKeysBtn = document.getElementById('settings-save-keys')
+
+// Restore saved keys
+Promise.all([
+  window.electronAPI?.loadState?.('owmKey'),
+  window.electronAPI?.loadState?.('airnowKey'),
+  window.electronAPI?.loadState?.('nasaKey')
+]).then(([owm, airnow, nasa]) => {
+  if (owm) { OWM_API_KEY = owm; if (owmKeyInput) owmKeyInput.value = owm }
+  if (airnow) { AIRNOW_API_KEY = airnow; if (airnowKeyInput) airnowKeyInput.value = airnow }
+  if (nasa) { NASA_NEOWS_PRIMARY_API_KEY = nasa; if (nasaKeyInput) nasaKeyInput.value = nasa }
+}).catch(() => {})
+
+if (saveKeysBtn) {
+  saveKeysBtn.addEventListener('click', () => {
+    const owm = owmKeyInput?.value?.trim()
+    const airnow = airnowKeyInput?.value?.trim()
+    const nasa = nasaKeyInput?.value?.trim()
+    if (owm) { OWM_API_KEY = owm; window.electronAPI?.saveState?.('owmKey', owm) }
+    if (airnow) { AIRNOW_API_KEY = airnow; window.electronAPI?.saveState?.('airnowKey', airnow) }
+    if (nasa) { NASA_NEOWS_PRIMARY_API_KEY = nasa; window.electronAPI?.saveState?.('nasaKey', nasa) }
+    saveKeysBtn.textContent = 'Saved ✓'
+    setTimeout(() => { saveKeysBtn.textContent = 'Save API Keys' }, 2000)
+  })
+}

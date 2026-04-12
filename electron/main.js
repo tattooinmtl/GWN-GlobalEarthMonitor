@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, Tray, Menu, nativeImage, session } = require('electron')
 const fs = require('fs')
 const path = require('path')
 
@@ -7,7 +7,7 @@ const SPLASH_MIN_VISIBLE_MS = 1200
 const STARTUP_STATE_MAX_LINES = 80
 
 // Use a dedicated writable profile path to avoid cache permission failures.
-const APP_DATA_DIR = path.join(app.getPath('temp'), 'EarthquakeViewerV2')
+const APP_DATA_DIR = path.join(app.getPath('temp'), 'GWN-GlobalEarthMonitor')
 const SESSION_DATA_DIR = path.join(APP_DATA_DIR, 'session')
 const CHROME_CACHE_DIR = path.join(SESSION_DATA_DIR, 'Cache')
 const GPU_CACHE_DIR = path.join(SESSION_DATA_DIR, 'GPUCache')
@@ -24,8 +24,19 @@ app.commandLine.appendSwitch('disable-features', 'NetworkServiceInProcess')
 
 let mainWindow = null
 let splashWindow = null
+let tray = null
+let currentTheme = 'dark'
 let splashShownAt = 0
 let revealScheduled = false
+
+// Read saved theme early so splash can use it
+try {
+  const stateFilePath = path.join(APP_DATA_DIR, 'app-state.json')
+  if (fs.existsSync(stateFilePath)) {
+    const saved = JSON.parse(fs.readFileSync(stateFilePath, 'utf-8'))
+    if (saved?.theme === 'light') currentTheme = 'light'
+  }
+} catch { /* use default dark */ }
 const startupState = {
   progress: 2,
   status: 'Preparing application shell...',
@@ -94,6 +105,7 @@ function revealMainWindow() {
 }
 
 function createSplashWindow() {
+  const splashBg = currentTheme === 'light' ? '#f0f4f8' : '#06080d'
   const win = new BrowserWindow({
     width: 760,
     height: 470,
@@ -103,7 +115,7 @@ function createSplashWindow() {
     fullscreenable: false,
     frame: false,
     autoHideMenuBar: true,
-    backgroundColor: '#06080d',
+    backgroundColor: splashBg,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'splash-preload.js'),
@@ -154,9 +166,9 @@ async function loadAppContent(win) {
       await win.loadURL(`data:text/html,${encodeURIComponent(`
       <html>
         <body style="margin:0;padding:24px;background:#0d1117;color:#e6edf3;font-family:Segoe UI,sans-serif;">
-          <h2 style="margin-top:0;">Earthquake Viewer v2 could not start</h2>
+          <h2 style="margin-top:0;">GWN - Global Earth Monitor could not start</h2>
           <p>The dev server at <b>${DEV_SERVER_URL}</b> is not reachable and no built files were found.</p>
-          <p>Run this in <b>Version2\\</b>:</p>
+          <p>Run this in the project folder:</p>
           <pre style="background:#161b22;border:1px solid #30363d;padding:12px;border-radius:8px;">npm run electron-dev</pre>
           <p>Or build once and run:</p>
           <pre style="background:#161b22;border:1px solid #30363d;padding:12px;border-radius:8px;">npm run build\nnpm start</pre>
@@ -180,9 +192,9 @@ async function loadAppContent(win) {
   await win.loadURL(`data:text/html,${encodeURIComponent(`
       <html>
         <body style="margin:0;padding:24px;background:#0d1117;color:#e6edf3;font-family:Segoe UI,sans-serif;">
-          <h2 style="margin-top:0;">Earthquake Viewer v2 could not start</h2>
+          <h2 style="margin-top:0;">GWN - Global Earth Monitor could not start</h2>
           <p>No dev server URL was provided and no built files were found.</p>
-          <p>Run this in <b>Version2\\</b>:</p>
+          <p>Run this in the project folder:</p>
           <pre style="background:#161b22;border:1px solid #30363d;padding:12px;border-radius:8px;">npm run electron-dev</pre>
           <p>Or build once and run:</p>
           <pre style="background:#161b22;border:1px solid #30363d;padding:12px;border-radius:8px;">npm run build\nnpm start</pre>
@@ -198,15 +210,22 @@ function createWindow() {
     height: 900,
     minWidth: 900,
     minHeight: 600,
-    title: 'Global Earthquake Viewer v4.0',
+    title: 'GWN - Global Earth Monitor',
     backgroundColor: '#0d1117',
     autoHideMenuBar: true,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      webSecurity: !DEV_SERVER_URL
     }
+  })
+
+  // Forward ALL renderer console messages to terminal for debugging
+  win.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+    const tag = ['LOG', 'WARN', 'ERR', 'DBG'][level] || 'LOG'
+    console.log(`[renderer:${tag}] ${message}`)
   })
 
   win.webContents.on('render-process-gone', (_event, details) => {
@@ -263,6 +282,12 @@ function createWindow() {
   })
 
   void loadAppContent(win)
+
+  // DEBUG: auto-open DevTools to capture fetch errors
+  win.webContents.once('did-finish-load', () => {
+    win.webContents.openDevTools({ mode: 'detach' })
+  })
+
   return win
 }
 
@@ -285,6 +310,7 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('startup-state:get', () => startupState)
+  ipcMain.handle('splash-theme:get', () => currentTheme)
 
   // --- State persistence (JSON key-value in userData) ---
   const STATE_FILE = path.join(APP_DATA_DIR, 'app-state.json')
@@ -364,8 +390,80 @@ app.whenReady().then(() => {
     }
   })
 
+  // --- Theme change from renderer ---
+  ipcMain.on('theme-changed', (_event, theme) => {
+    currentTheme = theme === 'light' ? 'light' : 'dark'
+    updateTrayIcon()
+  })
+
+  // --- Tray icon ---
+  function getLogoPath(theme) {
+    const filename = theme === 'light' ? 'LogoLight.ico' : 'LogoDark.ico'
+    if (DEV_SERVER_URL) {
+      return path.join(__dirname, filename)
+    }
+    const distPath = path.join(__dirname, '..', 'dist', filename)
+    if (fs.existsSync(distPath)) return distPath
+    return path.join(__dirname, filename)
+  }
+
+  function updateTrayIcon() {
+    try {
+      const iconPath = getLogoPath(currentTheme)
+      if (!fs.existsSync(iconPath)) return
+      const icon = nativeImage.createFromPath(iconPath).resize({ width: 32, height: 32 })
+      if (icon.isEmpty()) return
+      if (tray && !tray.isDestroyed()) {
+        tray.setImage(icon)
+      }
+    } catch (err) {
+      logMainError('tray-icon-update', err)
+    }
+  }
+
+  function createTray() {
+    try {
+      const iconPath = getLogoPath('dark')
+      if (!fs.existsSync(iconPath)) return
+      const icon = nativeImage.createFromPath(iconPath).resize({ width: 32, height: 32 })
+      if (icon.isEmpty()) return
+      tray = new Tray(icon)
+      tray.setToolTip('GWN - Global Earth Monitor')
+
+      const contextMenu = Menu.buildFromTemplate([
+        { label: 'Show', click: () => { if (mainWindow) { mainWindow.show(); mainWindow.focus() } } },
+        { label: 'Maximize', click: () => { if (mainWindow) mainWindow.maximize() } },
+        { label: 'Restore', click: () => { if (mainWindow) mainWindow.restore() } },
+        { type: 'separator' },
+        { label: 'Earthquakes', click: () => { showAndNavigate('earthquakes') } },
+        { label: 'Fireballs', click: () => { showAndNavigate('fireballs') } },
+        { label: 'Asteroids', click: () => { showAndNavigate('asteroids') } },
+        { label: 'Prediction', click: () => { showAndNavigate('prediction') } },
+        { label: 'Volcanoes', click: () => { showAndNavigate('volcanoes') } },
+        { type: 'separator' },
+        { label: 'Quit', click: () => { if (mainWindow) { mainWindow._forceClose = true; mainWindow.close() } app.quit() } }
+      ])
+      tray.setContextMenu(contextMenu)
+
+      tray.on('click', () => {
+        if (mainWindow) { mainWindow.show(); mainWindow.focus() }
+      })
+    } catch (err) {
+      logMainError('tray-create', err)
+    }
+  }
+
+  function showAndNavigate(tab) {
+    if (mainWindow) {
+      mainWindow.show()
+      mainWindow.focus()
+      mainWindow.webContents.send('navigate-tab', tab)
+    }
+  }
+
   splashWindow = createSplashWindow()
   mainWindow = createWindow()
+  createTray()
   app.on('activate', () => {
     if (!mainWindow) {
       splashWindow = createSplashWindow()

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GWN - Global Earthquake Viewer v4.0</title>
+  <title>GWN - Global Earth Monitor</title>
   <style>
     :root {
       color-scheme: dark;
@@ -19,6 +19,22 @@
       --accent3: #a78bfa;
       --ok: #34d399;
       --glow: rgba(56, 189, 248, 0.12);
+    }
+
+    html.light {
+      color-scheme: light;
+      --bg: #f0f4f8;
+      --panel: #ffffff;
+      --surface: #e8ecf1;
+      --border: #b0c4de;
+      --border-hi: #8aaed0;
+      --text: #1a1a2e;
+      --muted: #5a6a7a;
+      --accent: #1d6fb5;
+      --accent2: #4f64d8;
+      --accent3: #7c5cbf;
+      --ok: #1a9a5a;
+      --glow: rgba(29, 111, 181, 0.10);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -54,6 +70,21 @@
         0 32px 80px rgba(0, 0, 0, 0.6),
         0 0 120px rgba(56, 189, 248, 0.04);
       overflow: hidden;
+    }
+
+    html.light .shell {
+      background: linear-gradient(165deg, rgba(255, 255, 255, 0.98), rgba(240, 244, 248, 0.99));
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.04) inset,
+        0 32px 80px rgba(0, 0, 0, 0.12),
+        0 0 120px rgba(29, 111, 181, 0.06);
+    }
+
+    html.light body::before {
+      background:
+        radial-gradient(ellipse 60% 50% at 30% 20%, rgba(29, 111, 181, 0.06), transparent),
+        radial-gradient(ellipse 50% 40% at 70% 75%, rgba(79, 100, 216, 0.04), transparent),
+        radial-gradient(circle at 50% 50%, rgba(124, 92, 191, 0.02), transparent 70%);
     }
 
     .head {
@@ -245,18 +276,50 @@
       color: var(--ok);
       font-weight: 600;
     }
+
+    /* ---- Light theme overrides ---- */
+    html.light h1 {
+      background: linear-gradient(135deg, #1a1a2e, #2a4a6e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    html.light .head {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent);
+    }
+
+    html.light .version-badge {
+      background: linear-gradient(135deg, rgba(29, 111, 181, 0.12), rgba(79, 100, 216, 0.10));
+      border-color: rgba(29, 111, 181, 0.25);
+    }
+
+    html.light .bar {
+      background: rgba(200, 215, 230, 0.95);
+    }
+
+    html.light .bar-fill {
+      box-shadow: 0 0 16px rgba(29, 111, 181, 0.25);
+    }
+
+    html.light .log-shell {
+      background: rgba(255, 255, 255, 0.95);
+    }
+
+    html.light pre {
+      color: #3a4a5a;
+    }
   </style>
 </head>
 <body>
   <div class="shell">
     <div class="head">
       <div class="head-top">
-        <div class="globe"></div>
+        <img id="splash-logo" src="LogoDark.png" alt="GWN" style="width:48px;height:48px;border-radius:10px;object-fit:cover;flex-shrink:0;" />
         <div class="brand">
           <div class="eyebrow">Global Warning Networks</div>
-          <h1>GWN — Earthquake Viewer</h1>
+          <h1>GWN — Global Earth Monitor</h1>
         </div>
-        <div class="version-badge"><span class="dot"></span> v4.0</div>
+        <div class="version-badge"><span class="dot"></span> v5.0</div>
       </div>
       <div class="sub" id="status-text">Preparing application shell…</div>
     </div>
@@ -285,6 +348,15 @@
     const progressLabel = document.getElementById('progress-label')
     const statusText = document.getElementById('status-text')
     const logOutput = document.getElementById('log-output')
+    const splashLogo = document.getElementById('splash-logo')
+
+    // Apply saved theme immediately
+    window.splashAPI.getTheme().then(theme => {
+      if (theme === 'light') {
+        document.documentElement.classList.add('light')
+        splashLogo.src = 'LogoLight.png'
+      }
+    })
 
     function renderState(state) {
       if (!state) return

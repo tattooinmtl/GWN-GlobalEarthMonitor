@@ -1,7 +1,7 @@
 {
-  "name": "earthquake-viewer-v2",
-  "version": "4.0.0",
-  "description": "Global Earthquake Viewer v4.0 - Real-time seismic data, fireballs, volcanoes, atmosphere, notes, Pan-STARRS Sky Explorer",
+  "name": "gwn-global-earth-monitor",
+  "version": "5.0.0",
+  "description": "GWN - Global Earth Monitor v5.0 - Real-time seismic data, fireballs, volcanoes, atmosphere, notes, Pan-STARRS Sky Explorer",
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
@@ -15,19 +15,22 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "vite": "^5.0.0",
-    "electron": "^31.0.0",
     "concurrently": "^8.0.0",
-    "wait-on": "^7.0.0",
-    "electron-builder": "^24.13.3"
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3",
+    "png-to-ico": "^3.0.1",
+    "sharp": "^0.34.5",
+    "vite": "^5.0.0",
+    "wait-on": "^7.0.0"
   },
   "dependencies": {
+    "chart.js": "^4.4.0",
     "leaflet": "^1.9.4",
-    "chart.js": "^4.4.0"
+    "three": "^0.160.1"
   },
   "build": {
-    "appId": "com.gwn.earthquakeviewer2",
-    "productName": "GWN - Global Earthquake Viewer v4.0",
+    "appId": "com.gwn.globalearthmonitor",
+    "productName": "GWN - Global Earth Monitor",
     "directories": {
       "output": "release"
     },

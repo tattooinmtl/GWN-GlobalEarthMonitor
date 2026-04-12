@@ -1733,6 +1733,473 @@ body {
   font-size: 13px;
 }
 .notes-status { font-size: 12px; color: #8b949e; }
+
+/* ---- Sidebar brand with logo ---- */
+#sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.sidebar-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+#sidebar-brand h1 {
+  margin-bottom: 0;
+}
+
+/* ---- Settings panel ---- */
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-group:last-child {
+  border-bottom: none;
+}
+
+.settings-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.settings-about {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.settings-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.settings-about-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.settings-about-text span {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.settings-copyright {
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.settings-key-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  display: block;
+}
+
+.settings-key-input {
+  width: 100%;
+  padding: 5px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  margin-top: 2px;
+  box-sizing: border-box;
+}
+
+.settings-key-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.settings-save-btn {
+  margin-top: 8px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: rgba(88, 166, 255, 0.1);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.settings-save-btn:hover {
+  background: rgba(88, 166, 255, 0.2);
+}
+
+.tab-btn-settings {
+  border-color: rgba(88, 166, 255, 0.25) !important;
+  background: rgba(88, 166, 255, 0.06) !important;
+}
+
+.tab-btn-settings:hover {
+  background: rgba(88, 166, 255, 0.14) !important;
+}
+
+/* =============================================
+   LIGHT THEME
+   ============================================= */
+html.light {
+  --bg: #f0f4f8;
+  --surface: #ffffff;
+  --border: #b0c4de;
+  --text: #1a1a2e;
+  --text-muted: #5a6a7a;
+  --accent: #1d6fb5;
+  --green: #1a9a5a;
+  --yellow: #b8860b;
+  --orange: #d4620a;
+  --red: #c0392b;
+  --purple: #7b3fa0;
+}
+
+html.light body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+html.light #sidebar {
+  background: var(--surface);
+  border-right-color: var(--border);
+}
+
+html.light #sidebar-header {
+  border-bottom-color: var(--border);
+}
+
+html.light #live-event-banner {
+  background: #e8ecf1;
+  border-color: var(--border);
+}
+
+html.light #controls select,
+html.light #controls button,
+html.light #station-controls select,
+html.light #station-controls button {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+html.light #controls button,
+html.light #station-controls button {
+  background: var(--accent);
+  color: #fff;
+}
+
+html.light #quake-mag-filter-panel {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: var(--border);
+}
+
+html.light #quake-mag-filter {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+html.light #tabs {
+  background: linear-gradient(180deg, rgba(240, 244, 248, 0.9), rgba(255, 255, 255, 0.92));
+  border-bottom-color: var(--border);
+}
+
+html.light .tab-btn {
+  background: #e8ecf1;
+  color: var(--text);
+  border-color: var(--border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+html.light .tab-btn:hover {
+  background: #dce3eb;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+html.light .tab-btn.active {
+  background: linear-gradient(180deg, rgba(29, 111, 181, 0.15), rgba(29, 111, 181, 0.08));
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 14px rgba(29, 111, 181, 0.1);
+}
+
+html.light .side-controls-stack input,
+html.light .side-controls-stack select {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+html.light .side-controls-stack input::placeholder {
+  color: var(--text-muted);
+}
+
+html.light .quake-item {
+  border-bottom-color: var(--border);
+}
+
+html.light .quake-item:hover {
+  background: rgba(29, 111, 181, 0.06);
+}
+
+/* Light magnitude colors */
+html.light .mag-low    { background: #d4edda; color: #155724; }
+html.light .mag-medium { background: #fff3cd; color: #856404; }
+html.light .mag-high   { background: #ffe0cc; color: #a84300; }
+html.light .mag-severe { background: #f8d7da; color: #721c24; }
+html.light .mag-major  { background: #e8d5f5; color: #5a2d7a; }
+
+html.light .station-item {
+  border-bottom-color: var(--border);
+}
+
+html.light .station-item:hover {
+  background: rgba(29, 111, 181, 0.06);
+}
+
+html.light .station-code {
+  color: var(--accent);
+}
+
+html.light #quake-detail-panel {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: var(--border);
+}
+
+html.light .detail-item {
+  background: #f0f4f8;
+  border-color: var(--border);
+}
+
+html.light #waveform-panel {
+  background: var(--surface);
+  border-top-color: var(--accent);
+}
+
+html.light .window-btn {
+  background: var(--surface);
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+html.light .window-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+html.light .window-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* Light overlays */
+html.light .asteroid-panel,
+html.light .prediction-panel {
+  background: linear-gradient(180deg, rgba(240, 244, 248, 0.76), rgba(255, 255, 255, 0.98));
+}
+
+html.light .stats-panel {
+  background: linear-gradient(180deg, rgba(240, 244, 248, 0.76), rgba(255, 255, 255, 0.98));
+}
+
+html.light .asteroid-card,
+html.light .prediction-card,
+html.light .stats-card,
+html.light .stats-kpi-card {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: var(--border);
+}
+
+html.light .asteroid-item-btn {
+  color: var(--text);
+  border-bottom-color: var(--border);
+}
+
+html.light .asteroid-item-btn:hover,
+html.light .asteroid-item-btn.active {
+  background: rgba(29, 111, 181, 0.06);
+}
+
+html.light .asteroid-source-pill {
+  border-color: var(--border);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+html.light .asteroid-source-pill.ok .asteroid-source-pill-state { color: var(--green); }
+html.light .asteroid-source-pill.error .asteroid-source-pill-state { color: var(--red); }
+
+html.light .asteroid-btn,
+html.light .prediction-btn {
+  border-color: rgba(29, 111, 181, 0.3);
+  background: rgba(29, 111, 181, 0.08);
+  color: var(--text);
+}
+
+html.light .asteroid-btn:hover,
+html.light .prediction-btn:hover {
+  background: rgba(29, 111, 181, 0.16);
+}
+
+html.light .fireball-summary-card,
+html.light .fireball-legend,
+html.light .fireball-trend-section {
+  border-color: var(--border);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+html.light .fireball-filter-select {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+html.light .prediction-metric-card {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: var(--border);
+}
+
+html.light .prediction-bar-track,
+html.light .prediction-comp-track {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+html.light .prediction-comp-row + .prediction-comp-row {
+  border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+html.light .prediction-source-row + .prediction-source-row,
+html.light .prediction-history-row + .prediction-history-row {
+  border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+html.light .prediction-level-pill {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-muted);
+}
+
+/* Light notes */
+html.light .notes-toolbar {
+  background: #e8ecf1;
+  border-color: var(--border);
+}
+
+html.light .notes-tool-btn {
+  background: #dce3eb;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+html.light .notes-tool-btn:hover {
+  background: #c8d3df;
+}
+
+html.light .notes-tool-sep {
+  background: var(--border);
+}
+
+html.light .notes-tool-select {
+  background: #dce3eb;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+html.light #notes-editor {
+  background: #fff;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+html.light #notes-editor:focus {
+  border-color: var(--accent);
+}
+
+html.light .notes-head h2 { color: var(--text); }
+html.light .notes-head p { color: var(--text-muted); }
+
+html.light .notes-save-as-row input {
+  background: #fff;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+/* Light atmosphere */
+html.light .atmo-layer-toggle {
+  color: var(--text);
+}
+
+/* Light stats */
+html.light .stats-filter-grid input,
+html.light .stats-filter-grid select {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+html.light .stats-action-btn {
+  border-color: rgba(29, 111, 181, 0.28);
+  background: rgba(29, 111, 181, 0.08);
+  color: var(--text);
+}
+
+html.light .stats-action-btn.secondary {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: var(--border);
+}
+
+html.light .stats-table th {
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--text-muted);
+}
+
+html.light .stats-table td {
+  color: var(--text);
+}
+
+html.light .stats-table th,
+html.light .stats-table td {
+  border-bottom-color: var(--border);
+}
+
+/* Light Leaflet tile fix */
+html.light .leaflet-tile-pane {
+  filter: brightness(1) saturate(1) !important;
+}
+
+/* Light copyright */
+html.light .gwn-copyright {
+  color: var(--text-muted);
+}
+
+/* Light settings button */
+html.light .tab-btn-settings {
+  border-color: rgba(29, 111, 181, 0.25) !important;
+  background: rgba(29, 111, 181, 0.06) !important;
+}
+
+html.light .tab-btn-settings:hover {
+  background: rgba(29, 111, 181, 0.14) !important;
+}
 .notes-send-btn {
   background: #1f6feb;
   color: #fff;
