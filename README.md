@@ -1,6 +1,6 @@
-# 🌍 GWN - Global Earth Monitor 5.1.0
+# 🌍 GWN - Global Earth Monitor 1.0.0 (Production)
 
-A real-time global monitoring desktop application for earthquakes, fireballs, asteroids, volcanoes, atmosphere, and more. Built with Electron, GWN - Global Earth Monitor 5.0 brings together advanced data visualization, live feeds, and scientific tools in a single, modern interface.
+A real-time global monitoring desktop application for earthquakes, fireballs, asteroids, volcanoes, atmosphere, and more. Built with Electron, GWN - Global Earth Monitor 1.0 brings together advanced data visualization, live feeds, and scientific tools in a single, modern interface.
 
 <!-- Add screenshots here -->
 <!-- ![Screenshot](screenshots/main.png) -->
@@ -27,7 +27,7 @@ Get the latest Windows installer or portable version from the [Releases](https:/
 
 1. Download the `.exe` installer from the latest release
 2. Run the installer and follow the prompts
-3. Launch **GWN - Global Earth Monitor 5.0** from your Start menu or desktop shortcut
+3. Launch **GWN - Global Earth Monitor 1.0** from your Start menu or desktop shortcut
 
 Or, use the portable (unpacked) version from the `win-unpacked` folder for a no-install experience.
 
@@ -57,6 +57,12 @@ Or, use the portable (unpacked) version from the `win-unpacked` folder for a no-
 - **Vanilla JS** — No frontend framework dependencies
 
 ## Changelog
+
+### v1.0.0 — First production release
+- Security hardening: removed hardcoded API keys, sanitized notes HTML (XSS fix), escaped addon-rendered remote data, enforced web security and Vite fs strictness, removed open CORS proxy
+- Reliability: user data moved from %TEMP% to proper userData dir with migration, atomic state writes, fixed tray quit race, consistent note filename validation
+- Build/config: cross-platform dev script, bundled Leaflet CSS (offline-safe), no dead PHP/assets in dist, version consistency, electron-builder upgraded (v26) with icons wired up
+- Quality: shared utils module, visible error logging for previously silent catches, timer registry to prevent interval leaks
 
 ### v5.1.0 — Minor update
 - UI/UX Logos missing
