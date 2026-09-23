@@ -1,7 +1,7 @@
 {
   "name": "gwn-global-earth-monitor",
-  "version": "5.0.0",
-  "description": "GWN - Global Earth Monitor v5.0 - Real-time seismic data, fireballs, volcanoes, atmosphere, notes, Pan-STARRS Sky Explorer",
+  "version": "1.0.0",
+  "description": "GWN - Global Earth Monitor v1.0 (production) - Real-time seismic data, fireballs, volcanoes, atmosphere, notes, Pan-STARRS Sky Explorer",
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
