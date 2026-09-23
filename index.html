@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' data: blob: https:; connect-src 'self' https://earthquake.usgs.gov https://service.earthscope.org https://*.basemaps.cartocdn.com https://service.ncedc.org https://service.scedc.caltech.edu https://geofon.gfz-potsdam.de https://eida.ethz.ch https://ws.ipgp.fr https://www.orfeus-eu.org https://eida.bgr.de https://www.earthquakescanada.nrcan.gc.ca https://www.fnet.bosai.go.jp https://webservices.ingv.it https://ws.resif.fr https://service.geonet.org.nz https://www.seismicportal.eu https://www.jma.go.jp https://www.isc.ac.uk https://geocoding-api.open-meteo.com https://ssd-api.jpl.nasa.gov https://services.swpc.noaa.gov https://api.nasa.gov https://www.minorplanetcenter.net https://data.gsras.ru https://gibs.earthdata.nasa.gov https://tile.openweathermap.org https://api.openweathermap.org https://www.airnowapi.org https://ipapi.co https://volcanoes.usgs.gov https://volcano.si.edu https://raw.githubusercontent.com https://fonts.gstatic.com https://ps1images.stsci.edu https://catalogs.mast.stsci.edu https://mast.stsci.edu https://kauai.ccmc.gsfc.nasa.gov; font-src 'self' data: https:; worker-src 'self' blob:; child-src 'self' blob: https:; object-src 'none'; base-uri 'self'; frame-src 'self' blob:; frame-ancestors 'none';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' data: blob: https:; connect-src 'self' https://earthquake.usgs.gov https://service.earthscope.org https://tile.openstreetmap.org https://service.ncedc.org https://service.scedc.caltech.edu https://geofon.gfz-potsdam.de https://eida.ethz.ch https://ws.ipgp.fr https://www.orfeus-eu.org https://eida.bgr.de https://www.earthquakescanada.nrcan.gc.ca https://www.fnet.bosai.go.jp https://webservices.ingv.it https://ws.resif.fr https://service.geonet.org.nz https://www.seismicportal.eu https://www.jma.go.jp https://www.isc.ac.uk https://geocoding-api.open-meteo.com https://ssd-api.jpl.nasa.gov https://services.swpc.noaa.gov https://api.nasa.gov https://www.minorplanetcenter.net https://data.gsras.ru https://gibs.earthdata.nasa.gov https://tile.openweathermap.org https://api.openweathermap.org https://www.airnowapi.org https://ipapi.co https://volcanoes.usgs.gov https://volcano.si.edu https://raw.githubusercontent.com https://fonts.gstatic.com https://ps1images.stsci.edu https://catalogs.mast.stsci.edu https://mast.stsci.edu https://kauai.ccmc.gsfc.nasa.gov; font-src 'self' data: https:; worker-src 'self' blob:; child-src 'self' blob: https:; object-src 'none'; base-uri 'self'; frame-src 'self' blob:; frame-ancestors 'none';" />
   <title>GWN - Global Earth Monitor</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="/src/style.css" />
@@ -13,10 +13,6 @@
     <!-- Sidebar -->
     <aside id="sidebar">
       <div id="sidebar-header">
-        <div id="sidebar-brand">
-          <img id="sidebar-logo" src="LogoDark.png" alt="GWN" class="sidebar-logo" />
-          <h1>GWN - Global Earth Monitor</h1>
-        </div>
         <div id="live-event-banner">
           <span id="live-event-dot"></span>
           <span id="live-event-text">Waiting for data…</span>
@@ -379,7 +375,7 @@
                 <img id="settings-logo" src="LogoDark.png" alt="GWN" class="settings-logo" />
                 <div class="settings-about-text">
                   <strong>GWN - Global Earth Monitor</strong>
-                  <span>Version 1.0</span>
+                  <span>Version 1.1</span>
                   <span class="settings-copyright">© 2026 GWN - Erik Boivin</span>
                 </div>
               </div>
@@ -668,7 +664,7 @@
 
       <!-- Sky Explorer overlay -->
       <section id="skyexplorer-view" class="main-view hidden">
-        <iframe id="skyexplorer-iframe" src="./addon/skyExplorer.html" style="width:100%;height:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin" allowfullscreen></iframe>
+        <iframe id="skyexplorer-iframe" src="./addon/skyExplorer.html" style="width:100%;height:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" allowfullscreen></iframe>
       </section>
 
       <!-- Volcanoes overlay (uses the main map, so this is just a placeholder shown when needed) -->

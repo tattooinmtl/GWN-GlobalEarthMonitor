@@ -1,6 +1,6 @@
-# 🌍 GWN - Global Earth Monitor 1.0.0 (Production)
+# 🌍 GWN - Global Earth Monitor 1.1.0
 
-A real-time global monitoring desktop application for earthquakes, fireballs, asteroids, volcanoes, atmosphere, and more. Built with Electron, GWN - Global Earth Monitor 1.0 brings together advanced data visualization, live feeds, and scientific tools in a single, modern interface.
+A real-time global monitoring desktop application for earthquakes, fireballs, asteroids, volcanoes, atmosphere, and more. Built with Electron, GWN - Global Earth Monitor brings together live data, maps, and scientific tools in one window.
 
 <!-- Add screenshots here -->
 <!-- ![Screenshot](screenshots/main.png) -->
@@ -21,15 +21,50 @@ A real-time global monitoring desktop application for earthquakes, fireballs, as
 
 ## Download
 
-Get the latest Windows installer or portable version from the [Releases](https://github.com/tattooinmtl/GWN-GlobalEarthMonitor/releases/latest) page.
+**v1.1.0** is the current Windows release.
 
-### Installation
+### Release installer
 
-1. Download the `.exe` installer from the latest release
-2. Run the installer and follow the prompts
-3. Launch **GWN - Global Earth Monitor 1.0** from your Start menu or desktop shortcut
+Download and run the setup program:
 
-Or, use the portable (unpacked) version from the `win-unpacked` folder for a no-install experience.
+[GWN-Setup-1.1.0.exe](https://github.com/tattooinmtl/GWN-GlobalEarthMonitor/releases/download/v1.1.0/GWN-Setup-1.1.0.exe)
+
+That file is a normal Windows installer. It asks for an install folder, adds a Start menu shortcut and a desktop shortcut, and adds an uninstall entry in Apps & features. It is not a portable folder.
+
+1. Download `GWN-Setup-1.1.0.exe` from the [v1.1.0 release](https://github.com/tattooinmtl/GWN-GlobalEarthMonitor/releases/tag/v1.1.0)
+2. Run it and finish the wizard
+3. Launch **GWN - Global Earth Monitor** from the Start menu or the desktop shortcut
+
+Older builds stay on the [Releases](https://github.com/tattooinmtl/GWN-GlobalEarthMonitor/releases) page.
+
+### PowerShell installer
+
+`install.ps1` is the command-line installer. From PowerShell it downloads the **v1.1.0** release setup and runs it:
+
+```powershell
+irm https://raw.githubusercontent.com/tattooinmtl/GWN-GlobalEarthMonitor/main/install.ps1 | iex
+```
+
+The same command from the Run dialog or Command Prompt:
+
+```text
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/tattooinmtl/GWN-GlobalEarthMonitor/main/install.ps1 | iex"
+```
+
+Build from the GitHub source instead of the published setup file. This needs Node.js 18 or newer:
+
+```powershell
+$env:GWN_INSTALL_MODE = 'source'; irm https://raw.githubusercontent.com/tattooinmtl/GWN-GlobalEarthMonitor/main/install.ps1 | iex
+```
+
+From a local copy of this repository:
+
+```powershell
+.\install.ps1
+.\install.ps1 -Source
+.\install.ps1 -Installer .\release\GWN-Setup-1.1.0.exe
+.\install.ps1 -Silent
+```
 
 ## Data Sources
 
@@ -42,6 +77,7 @@ Or, use the portable (unpacked) version from the `win-unpacked` folder for a no-
 | [Pan-STARRS / MAST](https://catalogs.mast.stsci.edu) | Sky survey imagery & photometry |
 | [Smithsonian GVP](https://volcano.si.edu) | Global volcanism |
 | [NOAA SWPC](https://services.swpc.noaa.gov) | Space weather (Kp, X-ray, solar wind) |
+| [OpenStreetMap](https://www.openstreetmap.org/copyright) | Street map tiles |
 | [NASA GIBS](https://gibs.earthdata.nasa.gov) | SO₂, UV Aerosol, thermal anomalies |
 | [Earthquakes Canada (NRCan)](https://www.earthquakescanada.nrcan.gc.ca) | Canadian seismic data |
 | [GEOFON (GFZ)](https://geofon.gfz-potsdam.de) | German/global seismic data |
@@ -57,6 +93,14 @@ Or, use the portable (unpacked) version from the `win-unpacked` folder for a no-
 - **Vanilla JS** — No frontend framework dependencies
 
 ## Changelog
+
+### v1.1.0
+- Street maps use OpenStreetMap. CARTO tiles are gone, so the maps no longer ask for a CARTO API key
+- Sky Explorer **View in PS1 Cutout Service** and **View in MAST Catalog** open in the browser
+- The window and taskbar show the app icon
+- The side panel no longer shows a logo or title, so the lists use the full height
+- Windows release installer: `GWN-Setup-1.1.0.exe`
+- PowerShell installer: `install.ps1`
 
 ### v1.0.0 — First production release
 - Security hardening: removed hardcoded API keys, sanitized notes HTML (XSS fix), escaped addon-rendered remote data, enforced web security and Vite fs strictness, removed open CORS proxy

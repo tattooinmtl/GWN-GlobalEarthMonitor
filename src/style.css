@@ -44,7 +44,7 @@ body {
 
 /* ---- Sidebar ---- */
 #sidebar {
-  width: 340px;
+  width: clamp(280px, 26vw, 420px);
   min-width: 280px;
   background: var(--surface);
   border-right: 1px solid var(--border);
@@ -1733,26 +1733,6 @@ body {
   font-size: 13px;
 }
 .notes-status { font-size: 12px; color: #8b949e; }
-
-/* ---- Sidebar brand with logo ---- */
-#sidebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
-}
-
-.sidebar-logo {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-#sidebar-brand h1 {
-  margin-bottom: 0;
-}
 
 /* ---- Settings panel ---- */
 .settings-group {

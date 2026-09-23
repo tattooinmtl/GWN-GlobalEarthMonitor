@@ -49,6 +49,6 @@ packOne({
   id: 'sky-explorer',
   name: 'Sky Explorer',
   icon: '🔭',
-  version: '1.0.0',
+  version: '1.1.0',
   description: 'Pan-STARRS DR2 sky survey explorer with color imagery, photometry, and preset deep-sky objects.'
 })

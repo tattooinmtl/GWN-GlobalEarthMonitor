@@ -240,6 +240,17 @@ function playSound(type) {
   }
 }
 
+// Free basemap. OpenStreetMap standard tiles, no API key.
+const OSM_BASEMAP = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+const OSM_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+
+function addOsmBasemap(target, maxZoom = 19) {
+  L.tileLayer(OSM_BASEMAP, {
+    attribution: OSM_ATTRIBUTION,
+    maxZoom
+  }).addTo(target)
+}
+
 // ------- Map Init -------
 function initMap() {
   map = L.map('map', {
@@ -248,11 +259,7 @@ function initMap() {
     zoomControl: true
   })
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap © CARTO',
-    subdomains: 'abcd',
-    maxZoom: 19
-  }).addTo(map)
+  addOsmBasemap(map)
 
   markers.addTo(map)
   // fireballMarkers and volcanoMarkers start off-map; added when their tabs activate
@@ -3771,19 +3778,13 @@ function initAtmosphereMaps() {
     center: [20, 0], zoom: 2,
     zoomControl: true
   })
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap © CARTO',
-    subdomains: 'abcd', maxZoom: 19
-  }).addTo(atmoWeatherMap)
+  addOsmBasemap(atmoWeatherMap)
 
   atmoSpaceMap = L.map('atmo-space-map', {
     center: [60, 0], zoom: 2,
     zoomControl: true
   })
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap © CARTO',
-    subdomains: 'abcd', maxZoom: 10
-  }).addTo(atmoSpaceMap)
+  addOsmBasemap(atmoSpaceMap, 19)
 
   // D-Region absorption image overlay (full globe)
   const absorptionImgUrl = 'https://services.swpc.noaa.gov/images/animations/d-region-absorption/latest.png'
@@ -4149,9 +4150,7 @@ function applyTheme(theme) {
 
   // Update logos
   const logoSrc = isDark ? 'LogoDark.png' : 'LogoLight.png'
-  const sidebarLogo = document.getElementById('sidebar-logo')
   const settingsLogo = document.getElementById('settings-logo')
-  if (sidebarLogo) sidebarLogo.src = logoSrc
   if (settingsLogo) settingsLogo.src = logoSrc
 
   // Leaflet tile brightness

@@ -1,8 +1,13 @@
-const { app, BrowserWindow, ipcMain, dialog, Tray, Menu, nativeImage, session } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, Tray, Menu, nativeImage, session, shell } = require('electron')
 const fs = require('fs')
 const path = require('path')
 
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL
+const WINDOW_ICON = path.join(__dirname, 'LogoDark.ico')
+
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.gwn.globalearthmonitor')
+}
 const SPLASH_MIN_VISIBLE_MS = 1200
 const STARTUP_STATE_MAX_LINES = 80
 
@@ -115,6 +120,7 @@ function createSplashWindow() {
     fullscreenable: false,
     frame: false,
     autoHideMenuBar: true,
+    icon: WINDOW_ICON,
     backgroundColor: splashBg,
     show: false,
     webPreferences: {
@@ -211,6 +217,7 @@ function createWindow() {
     minWidth: 900,
     minHeight: 600,
     title: 'GWN - Global Earth Monitor',
+    icon: WINDOW_ICON,
     backgroundColor: '#0d1117',
     autoHideMenuBar: true,
     show: false,
@@ -258,9 +265,11 @@ function createWindow() {
     }
   })
 
-  // --- Security: block new-window requests from opening external URLs ---
+  // Open http(s) links in the system browser. Keep them out of the app window.
   win.webContents.setWindowOpenHandler(({ url }) => {
-    logMainError('blocked-window-open', new Error(`Blocked window.open to: ${url}`))
+    if (/^https?:\/\//i.test(url)) {
+      shell.openExternal(url)
+    }
     return { action: 'deny' }
   })
 

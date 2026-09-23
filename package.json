@@ -1,7 +1,7 @@
 {
-  "name": "gwn-global-earth-monitor",
-  "version": "1.0.0",
-  "description": "GWN - Global Earth Monitor v1.0 (production) - Real-time seismic data, fireballs, volcanoes, atmosphere, notes, Pan-STARRS Sky Explorer",
+  "name": "gwn",
+  "version": "1.1.0",
+  "description": "GWN - Global Earth Monitor v1.1 - Real-time seismic data, fireballs, volcanoes, atmosphere, notes, Pan-STARRS Sky Explorer",
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
@@ -9,6 +9,7 @@
     "build": "vite build",
     "electron-dev": "concurrently \"vite\" \"wait-on http://localhost:5174 && set VITE_DEV_SERVER_URL=http://localhost:5174&& electron .\"",
     "preview": "vite preview",
+    "dist:win": "npm run build && electron-builder --win nsis --x64",
     "dist:win-unpacked": "npm run build && electron-builder --win --dir"
   },
   "keywords": [],
@@ -32,13 +33,16 @@
     "appId": "com.gwn.globalearthmonitor",
     "productName": "GWN - Global Earth Monitor",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "electron"
     },
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "package.json"
+      "package.json",
+      "!node_modules/**"
     ],
+    "asar": true,
     "extraResources": [
       {
         "from": "addon",
@@ -46,17 +50,32 @@
       }
     ],
     "win": {
+      "icon": "electron/LogoDark.ico",
       "target": [
-        "nsis",
-        "dir"
-      ]
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "GWN-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": null,
-      "uninstallerIcon": null,
-      "installerHeaderIcon": null
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "GWN - Global Earth Monitor",
+      "menuCategory": "GWN",
+      "installerIcon": "electron/LogoDark.ico",
+      "uninstallerIcon": "electron/LogoDark.ico",
+      "installerHeaderIcon": "electron/LogoDark.ico",
+      "deleteAppDataOnUninstall": false,
+      "unicode": true,
+      "warningsAsErrors": false
     }
   }
 }
