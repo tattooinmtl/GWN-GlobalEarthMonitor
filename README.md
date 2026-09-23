@@ -3,6 +3,7 @@
 A real-time global monitoring desktop application for earthquakes, fireballs, asteroids, volcanoes, atmosphere, and more. Built with Electron, GWN - Global Earth Monitor brings together live data, maps, and scientific tools in one window.
 
 <!-- Add screenshots here -->
+https://earth.globalwarningnetworks.com/
 <!-- ![Screenshot](screenshots/main.png) -->
 
 ## Features
